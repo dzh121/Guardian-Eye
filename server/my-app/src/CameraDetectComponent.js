@@ -6,7 +6,7 @@ const CameraDetectComponent = () => {
   return (
     <div>
       <h2>Camera Detect</h2>
-      <VideoComponent />
+      <VideoComponent videoFilename={"output_1709914507.mp4"} />
     </div>
   );
 };

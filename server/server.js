@@ -1,13 +1,13 @@
 const express = require("express");
 const http = require("http");
-const WebSocket = require("ws");
 const path = require("path");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const multer = require("multer");
+const fs = require("fs");
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
 
 const JWT_SECRET = "tempkey"; // This should be a more complex secret in production
 
@@ -60,11 +60,65 @@ app.get("/check-auth", (req, res) => {
   });
 });
 
+const storage = multer.diskStorage({
+  destination: "uploads/",
+  filename: function (req, file, cb) {
+    // Use the original filename provided by the client
+    cb(null, file.originalname);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+app.post("/upload", upload.single("file"), (req, res) => {
+  // req.file contains information about the uploaded file
+  if (!req.file) {
+    return res.status(400).send("No file uploaded.");
+  }
+
+  // Handle the uploaded file (e.g., save it to disk, process it, etc.)
+  console.log("File received:", req.file.originalname);
+  console.log("File saved as:", req.file.filename);
+
+  // Send a response indicating success
+  res.send("File uploaded successfully.");
+});
+
+const videoDirectory = path.join(__dirname, "uploads");
+
+app.get("/video/:filename", (req, res) => {
+  const { filename } = req.params;
+  const filePath = path.join(videoDirectory, filename);
+
+  console.log("Video request received for filename:", filename);
+
+  // Check if the file exists
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.error("Video file not found at path:", filePath);
+      return res.status(404).send("Video not found");
+    }
+
+    console.log("Video file found at path:", filePath);
+
+    // Set the appropriate content type for video files
+    res.setHeader("Content-Type", "video/mp4");
+
+    // Stream the video file to the client
+    const stream = fs.createReadStream(filePath);
+    stream.on("open", () => {
+      stream.pipe(res);
+    });
+    stream.on("error", (err) => {
+      console.error("Error streaming video file:", err);
+      res.status(500).send("Error streaming video");
+    });
+  });
+});
 // Redirect all non-API requests to the React app
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "my-app", "build", "index.html"));
 });
-
 server.listen(3000, () => {
   console.log("Server running on port 3000");
 });
