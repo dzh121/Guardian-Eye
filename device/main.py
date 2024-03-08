@@ -1,4 +1,3 @@
-import itertools
 import cv2
 import dlib
 import numpy as np
@@ -24,7 +23,7 @@ def load_encodings(filename=ENCODINGS_FILE):
     return {}
 
 def process_frame(frame, known_face_encodings, face_detector, shape_predictor, face_recognition_model):
-    """Process a single frame for face recognition using 2323."""
+    """Process a single frame for face recognition using dlib."""
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     detections = face_detector(rgb_frame)
 
