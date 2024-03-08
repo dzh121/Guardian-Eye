@@ -3,6 +3,7 @@
     "axios": "^1.6.7",
     "cors": "^2.8.5",
     "express": "^4.18.3",
+    "jsonwebtoken": "^9.0.2",
     "react-router-dom": "^6.22.3",
     "socket.io-client": "^4.7.4"
   },
