@@ -15,7 +15,6 @@ const JWT_SECRET = "tempkey"; // This should be a more complex secret in product
 const corsOptions = {
   credentials: true,
   origin: "http://localhost:3000", // Adjust as needed
-  allowedHeaders: ["Authorization"],
 };
 app.use(cors(corsOptions));
 
@@ -85,36 +84,56 @@ app.post("/upload", upload.single("file"), (req, res) => {
 });
 
 const videoDirectory = path.join(__dirname, "uploads");
+app.use("/video", express.static(videoDirectory));
+app.get("/video/:filename", function (req, res) {
+  const filePath = path.join(__dirname, "uploads", req.params.filename);
+  res.setHeader("Content-Type", "video/x-ms-wmv");
+  res.setHeader("Content-Disposition", "inline");
+  fs.createReadStream(filePath).pipe(res);
+});
 
-app.get("/video/:filename", (req, res) => {
-  const { filename } = req.params;
-  const filePath = path.join(videoDirectory, filename);
-
-  console.log("Video request received for filename:", filename);
-
-  // Check if the file exists
-  fs.access(filePath, fs.constants.F_OK, (err) => {
+app.get("/videos", (req, res) => {
+  fs.readdir(videoDirectory, (err, files) => {
     if (err) {
-      console.error("Video file not found at path:", filePath);
-      return res.status(404).send("Video not found");
+      console.log(err);
+      return res.status(500).send("Unable to retrieve videos");
     }
 
-    console.log("Video file found at path:", filePath);
-
-    // Set the appropriate content type for video files
-    res.setHeader("Content-Type", "video/mp4");
-
-    // Stream the video file to the client
-    const stream = fs.createReadStream(filePath);
-    stream.on("open", () => {
-      stream.pipe(res);
-    });
-    stream.on("error", (err) => {
-      console.error("Error streaming video file:", err);
-      res.status(500).send("Error streaming video");
-    });
+    const videoFiles = files.filter(
+      (file) => path.extname(file).toLowerCase() === ".mp4"
+    );
+    res.json(videoFiles);
   });
 });
+// app.get("/video/:filename", (req, res) => {
+//   const { filename } = req.params;
+//   const filePath = path.join(videoDirectory, filename);
+
+//   // Check if the video file exists
+//   fs.stat(filePath, (err, stats) => {
+//     if (err) {
+//       if (err.code === "ENOENT") {
+//         // File does not exist
+//         return res.status(404).send("Video not found");
+//       }
+//       // Other server error
+//       return res.status(500).send("Server error");
+//     }
+
+//     // File exists - stream it
+//     res.setHeader("Content-Type", "video/mp4");
+//     const stream = fs.createReadStream(filePath);
+
+//     stream.on("open", () => {
+//       stream.pipe(res);
+//     });
+
+//     stream.on("error", (streamErr) => {
+//       res.end(streamErr);
+//     });
+//   });
+// });
+
 // Redirect all non-API requests to the React app
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "my-app", "build", "index.html"));
