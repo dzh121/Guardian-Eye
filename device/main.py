@@ -12,7 +12,7 @@ import threading
 ENCODINGS_FILE = "encodings.dat"
 SHAPE_PREDICTOR_FILE = "shape_predictor_68_face_landmarks.dat"
 FACE_RECOGNITION_MODEL_FILE = "dlib_face_recognition_resnet_model_v1.dat"
-OUTPUT_DIR = "./videos"
+OUTPUT_DIR = "videos"
 COOLDOWN_PERIOD = 60  # in seconds
 DETECTION_PERIOD = 15  # in seconds
 
