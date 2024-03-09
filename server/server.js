@@ -69,8 +69,6 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
-
 const getUserFromToken = (token) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -80,62 +78,42 @@ const getUserFromToken = (token) => {
     return null;
   }
 };
-
-app.post("/upload", upload.single("file"), (req, res) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  const userId = getUserFromToken(token);
-
-  const user = users.find((u) => u.id === userId);
-  if (!user) {
-    return res.status(403).send("User not authorized or not found.");
-  }
-
-  const userUploadsPath = path.join(__dirname, "uploads", user.houseId);
-  fs.mkdirSync(userUploadsPath, { recursive: true });
-
-  const storage = multer.diskStorage({
-    destination: userUploadsPath,
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      const houseId = req.headers["house-id"];
+      const uploadPath = path.join(__dirname, "uploads", houseId);
+      fs.mkdirSync(uploadPath, { recursive: true });
+      cb(null, uploadPath);
+    },
     filename: function (req, file, cb) {
       cb(null, file.originalname);
     },
-  });
+  }),
+}).single("file");
 
-  const userUpload = multer({ storage }).single("file");
-  userUpload(req, res, function (err) {
-    if (err) {
-      return res.status(500).send(err.message);
+app.post("/upload", (req, res) => {
+  upload(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      return res.status(500).send("Multer error: " + err.message);
+    } else if (err) {
+      return res.status(500).send("Unknown error: " + err.message);
     }
-
-    // Save video details in user's JSON record here (if needed)
     res.send("File uploaded successfully.");
   });
+  const houseId = req.headers["house-id"];
+  const deviceID = req.headers["device-id"];
+  updateHouseJson(houseId, req.file.originalname, deviceID);
 });
+app.get("/videos", (req, res) => {
+  const houseId = getHouseIdFromUser(req.user); // Assuming you have a way to get houseId from user info
+  const videos = getVideosFromHouseJson(houseId); // A function to read from JSON and return video list
+  res.json(videos);
+});
+//Todo: define functions
 
 const videoDirectory = path.join(__dirname, "uploads");
 app.use("/video", express.static(videoDirectory));
-
-app.get("/videos", (req, res) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  const userId = getUserFromToken(token);
-
-  const user = users.find((u) => u.id === userId);
-  if (!user) {
-    return res.status(403).send("User not authorized or not found.");
-  }
-
-  const userUploadsPath = path.join(__dirname, "uploads", user.houseId);
-  fs.readdir(userUploadsPath, (err, files) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send("Unable to retrieve videos");
-    }
-
-    const videoFiles = files.filter(
-      (file) => path.extname(file).toLowerCase() === ".mp4"
-    );
-    res.json(videoFiles);
-  });
-});
 
 // Redirect all non-API requests to the React app
 app.get("*", (req, res) => {
