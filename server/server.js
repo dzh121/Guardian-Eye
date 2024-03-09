@@ -24,7 +24,9 @@ app.use(express.urlencoded({ extended: false }));
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, "my-app", "build")));
 
-const users = [{ email: "***REMOVED***", password: "pass1" }]; // Example user database
+const users = [
+  { email: "***REMOVED***", password: "pass1", houseId: "house1" },
+]; // Example user database
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
@@ -69,33 +71,62 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+const getUserFromToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded.userId;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
 app.post("/upload", upload.single("file"), (req, res) => {
-  // req.file contains information about the uploaded file
-  if (!req.file) {
-    return res.status(400).send("No file uploaded.");
+  const token = req.headers.authorization?.split(" ")[1];
+  const userId = getUserFromToken(token);
+
+  const user = users.find((u) => u.id === userId);
+  if (!user) {
+    return res.status(403).send("User not authorized or not found.");
   }
 
-  // Handle the uploaded file (e.g., save it to disk, process it, etc.)
-  console.log("File received:", req.file.originalname);
-  console.log("File saved as:", req.file.filename);
+  const userUploadsPath = path.join(__dirname, "uploads", user.houseId);
+  fs.mkdirSync(userUploadsPath, { recursive: true });
 
-  // Send a response indicating success
-  res.send("File uploaded successfully.");
+  const storage = multer.diskStorage({
+    destination: userUploadsPath,
+    filename: function (req, file, cb) {
+      cb(null, file.originalname);
+    },
+  });
+
+  const userUpload = multer({ storage }).single("file");
+  userUpload(req, res, function (err) {
+    if (err) {
+      return res.status(500).send(err.message);
+    }
+
+    // Save video details in user's JSON record here (if needed)
+    res.send("File uploaded successfully.");
+  });
 });
 
 const videoDirectory = path.join(__dirname, "uploads");
 app.use("/video", express.static(videoDirectory));
-app.get("/video/:filename", function (req, res) {
-  const filePath = path.join(__dirname, "uploads", req.params.filename);
-  res.setHeader("Content-Type", "video/x-ms-wmv");
-  res.setHeader("Content-Disposition", "inline");
-  fs.createReadStream(filePath).pipe(res);
-});
 
 app.get("/videos", (req, res) => {
-  fs.readdir(videoDirectory, (err, files) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  const userId = getUserFromToken(token);
+
+  const user = users.find((u) => u.id === userId);
+  if (!user) {
+    return res.status(403).send("User not authorized or not found.");
+  }
+
+  const userUploadsPath = path.join(__dirname, "uploads", user.houseId);
+  fs.readdir(userUploadsPath, (err, files) => {
     if (err) {
-      console.log(err);
+      console.error(err);
       return res.status(500).send("Unable to retrieve videos");
     }
 
@@ -105,34 +136,6 @@ app.get("/videos", (req, res) => {
     res.json(videoFiles);
   });
 });
-// app.get("/video/:filename", (req, res) => {
-//   const { filename } = req.params;
-//   const filePath = path.join(videoDirectory, filename);
-
-//   // Check if the video file exists
-//   fs.stat(filePath, (err, stats) => {
-//     if (err) {
-//       if (err.code === "ENOENT") {
-//         // File does not exist
-//         return res.status(404).send("Video not found");
-//       }
-//       // Other server error
-//       return res.status(500).send("Server error");
-//     }
-
-//     // File exists - stream it
-//     res.setHeader("Content-Type", "video/mp4");
-//     const stream = fs.createReadStream(filePath);
-
-//     stream.on("open", () => {
-//       stream.pipe(res);
-//     });
-
-//     stream.on("error", (streamErr) => {
-//       res.end(streamErr);
-//     });
-//   });
-// });
 
 // Redirect all non-API requests to the React app
 app.get("*", (req, res) => {

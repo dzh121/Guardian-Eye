@@ -7,11 +7,28 @@ const VideoComponent = ({ videoFilename }) => {
   useEffect(() => {
     // Generate the video URL and clear it on component unmount
     let videoObjectUrl;
+    let latestVideo = null;
 
+    const getLatestVideo = async () => {
+      try {
+        const response = await fetch("/videos");
+        if (!response.ok) {
+          throw new Error("Network response was not ok.");
+        }
+        const videoFiles = await response.json();
+        console.log("Video files:", videoFiles);
+        latestVideo = videoFiles[videoFiles.length - 1];
+        console.log("Latest video:", latestVideo);
+        fetchVideo();
+      } catch (error) {
+        console.error("There was a problem fetching the video files:", error);
+      }
+    };
     const fetchVideo = async () => {
       console.log("Fetching video URL...");
+      console.log(`Latest video: /video/${latestVideo}`);
       try {
-        const response = await fetch(`/video/${videoFilename}`);
+        const response = await fetch(`/video/${latestVideo}`);
         console.log("Response status: ", response.status);
 
         if (!response.ok) {
@@ -29,7 +46,7 @@ const VideoComponent = ({ videoFilename }) => {
       }
     };
 
-    fetchVideo();
+    getLatestVideo();
 
     // Cleanup function to revoke the object URL
     return () => {
