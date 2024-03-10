@@ -9,9 +9,21 @@ function LoginComponent() {
   // Function to check if the user is authenticated
   const checkAuth = async () => {
     try {
-      const data = await fetchWithToken("http://localhost:3000/check-auth");
-      console.log("User is authenticated", data);
-      return true;
+      const response = await fetch("http://localhost:3000/check-auth", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("User is authenticated", data);
+        return true;
+      } else {
+        console.log("User is not authenticated");
+        return false;
+      }
     } catch (error) {
       console.error("Error during auth check:", error);
       return false;

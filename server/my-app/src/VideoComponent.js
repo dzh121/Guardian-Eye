@@ -11,7 +11,12 @@ const VideoComponent = ({ videoFilename }) => {
 
     const getLatestVideo = async () => {
       try {
-        const response = await fetch("/videos");
+        const response = await fetch("http://localhost:3000/videos", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
         if (!response.ok) {
           throw new Error("Network response was not ok.");
         }
@@ -28,7 +33,12 @@ const VideoComponent = ({ videoFilename }) => {
       console.log("Fetching video URL...");
       console.log(`Latest video: /video/${latestVideo}`);
       try {
-        const response = await fetch(`/video/${latestVideo}`);
+        const response = await fetch(`/video/${latestVideo}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
         console.log("Response status: ", response.status);
 
         if (!response.ok) {
