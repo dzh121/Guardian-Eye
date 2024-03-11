@@ -23,10 +23,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "my-app", "build")));
 
-const users = [
-  { email: "user1@gmail.com", password: "pass1", houseId: "house1" },
-]; // Example user database
-
 app.get("/protected", verifyToken, (req, res) => {
   res.json({ message: "Welcome to the protected route!", user: req.user });
 });
@@ -47,6 +43,19 @@ app.post("/verify-token", (req, res) => {
     });
 });
 
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      const houseId = req.headers["house-id"];
+      const uploadPath = path.join(__dirname, "uploads", houseId);
+      fs.mkdirSync(uploadPath, { recursive: true });
+      cb(null, uploadPath);
+    },
+    filename: function (req, file, cb) {
+      cb(null, file.originalname);
+    },
+  }),
+}).single("file");
 function verifyToken(req, res, next) {
   const idToken = req.headers.authorization?.split("Bearer ")[1];
 
@@ -86,32 +95,24 @@ function verifyToken(req, res, next) {
       res.status(403).send("Failed to authenticate token");
     });
 }
+app.post("/upload", verifyToken, upload.single("video"), async (req, res) => {
+  // Extracting metadata from headers
+  const deviceID = req.headers["deviceid"];
+  const deviceLocation = req.headers["devicelocation"];
+  const timeSent = req.headers["timesent"];
+  const fileName = req.file ? req.file.originalname : req.headers["filename"]; // Assuming file is sent with key 'video'
 
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: function (req, file, cb) {
-      const houseId = req.headers["house-id"];
-      const uploadPath = path.join(__dirname, "uploads", houseId);
-      fs.mkdirSync(uploadPath, { recursive: true });
-      cb(null, uploadPath);
-    },
-    filename: function (req, file, cb) {
-      cb(null, file.originalname);
-    },
-  }),
-}).single("file");
-
-app.post("/upload", verifyToken, async (req, res) => {
-  const { firebaseStorageUrl, deviceID } = req.body;
-  const houseId = req.user.houseId; // Assuming houseId is part of the token
+  const uid = req.user.uid; // UID from the verified token
 
   try {
-    // Save metadata to Firestore
-    const docRef = await db.collection("videos").add({
-      houseId,
+    const db = admin.firestore();
+    const userVideosRef = db.collection("users").doc(uid).collection("videos");
+
+    const docRef = await userVideosRef.add({
       deviceID,
-      url: firebaseStorageUrl,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      fileName,
+      deviceLocation,
+      timeSent: new Date(timeSent),
     });
 
     res.status(200).send(`Video metadata saved with ID: ${docRef.id}`);
@@ -153,25 +154,10 @@ app.post("/upload", verifyToken, async (req, res) => {
 //   // Removed res.send(decoded) to avoid sending two responses
 // });
 app.get("/videos", verifyToken, async (req, res) => {
-  const idToken = req.headers.authorization?.split("Bearer ")[1];
-
-  if (!idToken) {
-    return res.status(401).send("No token provided");
-  }
-
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const uid = decodedToken.uid;
+    const uid = req.user.uid;
     const db = admin.firestore();
 
-    // Retrieve the user's document based on the UID
-    const userDoc = await db.collection("users").doc(uid).get();
-
-    if (!userDoc.exists) {
-      return res.status(404).send("User document not found in database");
-    }
-
-    // Retrieve the videos collection under the user's document
     const videosCollectionRef = db.collection(`users/${uid}/videos`);
     const videoQuerySnapshot = await videosCollectionRef.limit(1).get();
 
@@ -179,10 +165,7 @@ app.get("/videos", verifyToken, async (req, res) => {
       return res.status(404).send("No videos found");
     }
 
-    // Get the name of the first video
     const firstVideoName = videoQuerySnapshot.docs[0].data().name;
-    console.log("First video name:", videoQuerySnapshot.docs[0].data());
-    console.log("First video name:", firstVideoName);
     res.status(200).json({ firstVideoName, uid });
   } catch (error) {
     console.error("Error retrieving videos:", error);
@@ -191,14 +174,8 @@ app.get("/videos", verifyToken, async (req, res) => {
 });
 
 app.use("/video", verifyToken, async (req, res, next) => {
-  const idToken = req.headers.authorization?.split("Bearer ")[1];
-  if (!idToken) {
-    return res.status(401).send("No token provided");
-  }
-
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const uid = decodedToken.uid;
+    const uid = req.user.uid;
     console.log(uid);
     const videoDirectory = path.join(__dirname, "uploads", uid);
     // Check if directory exists
@@ -213,6 +190,7 @@ app.use("/video", verifyToken, async (req, res, next) => {
     res.status(500).send("Error retrieving videos");
   }
 });
+
 // Redirect all non-API requests to the React app
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "my-app", "build", "index.html"));
@@ -220,6 +198,5 @@ app.get("*", (req, res) => {
 server.listen(3000, () => {
   console.log("Server running on port 3000");
 });
-
 
 //need to work on user dat / show videos and such
