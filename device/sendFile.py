@@ -36,15 +36,17 @@ def sendFile(file_name, device_id, device_location):
         'timestamp': str(int(datetime.now().timestamp())),
         'filename': file_name
     }
-    # Open the video file in binary mode
-    with open(file_name, 'rb') as f:
-        # Send a POST request with the file as the request body and headers
-        response = requests.post(url, files={'file': f}, headers=headers)
 
-    # Check the response status
-    if response.status_code == 200:
-        print("File uploaded successfully!")
-    else:
-        print("Failed to upload file:", response.text)
-print(token)
+    try:
+        with open(file_name, 'rb') as f:
+            response = requests.post(url, files={'file': f}, headers=headers)
+
+            # Check the response status
+            if response.status_code == 200:
+                print("File uploaded successfully!")
+            else:
+                print("Failed to upload file:", response.text)
+    except Exception as e:
+        print("Failed to upload file:", e)
+
 sendFile("./videos/output_1710000208.mp4", "device1", "location1")

@@ -2,3 +2,4 @@ dlib==19.24.2
 face_recognition==1.3.0
 numpy==1.26.4
 opencv_python==4.9.0.80
+Requests==2.31.0
