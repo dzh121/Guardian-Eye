@@ -6,6 +6,8 @@ import os
 import time
 from collections import deque
 import threading
+import subprocess
+import sendFile as sf
 
 # Configuration and constants
 ENCODINGS_FILE = "encodings.dat"
@@ -78,8 +80,20 @@ def save_buffer_to_file(buffer, filename):
         out.write(frame)
 
     out.release()
-    print(f"Video file saved: {filepath}")  # Confirmation of saving
+    re_encode_video(f"./videos/{filename}")
 
+
+def re_encode_video(filepath, bitrate='1860k'):
+    # Create a temporary output file name
+    tmp_filepath = filepath + '.tmp.mp4'
+
+    command = [
+        'ffmpeg', '-y', '-i', filepath, '-b:v', bitrate, '-bufsize', bitrate, tmp_filepath
+    ]
+    subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Replace the original file with the new re-encoded file
+    os.replace(tmp_filepath, filepath)
 
 class BufferManager:
     def __init__(self, fps):
@@ -123,6 +137,8 @@ class BufferManager:
             filename = f"output_{int(time.time())}.mp4"
             save_buffer_to_file(buffer_copy, filename)
             print(f"Saved video to {filename}")
+            sf.sendFile(f"./videos/{filename}")
+            print(f"Sent video to server")
             self.clear_buffer()
 
 
@@ -150,8 +166,8 @@ def face_detection_thread(video_capture, buffer_manager, known_face_encodings, f
         buffer_manager.process_detection(face_detected)
 
         # Draw results and show the frame
-        draw_results(frame, face_locations, face_names)
-        cv2.imshow("Video", frame)
+        # draw_results(frame, face_locations, face_names)
+        # cv2.imshow("Video", frame)
 
         # Break the loop if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
