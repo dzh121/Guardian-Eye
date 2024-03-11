@@ -1,70 +1,46 @@
 import React, { useState } from "react";
 import { Form, Button, Card, Container } from "react-bootstrap";
-import { fetchWithToken } from "./api";
+import { auth } from "./firebase";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
 function LoginComponent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   // Function to check if the user is authenticated
-  const checkAuth = async () => {
-    try {
-      const response = await fetch("http://localhost:3000/check-auth", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("User is authenticated", data);
-        return true;
-      } else {
-        console.log("User is not authenticated");
-        return false;
-      }
-    } catch (error) {
-      console.error("Error during auth check:", error);
-      return false;
-    }
-  };
-
-  const handleLogin = async (event) => {
+  const handleLogin = (event) => {
     event.preventDefault();
-    try {
-      const response = await fetch("http://localhost:3000/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+
+    const auth = getAuth();
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Get the ID token
+        userCredential.user.getIdToken().then((idToken) => {
+          // Send this token to your server for verification
+          fetch("/verify-token", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ idToken }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log("Server response:", data);
+              // Handle response from your server
+            })
+            .catch((error) => {
+              console.error("Error posting token to server:", error);
+            });
+        });
+      })
+      .catch((error) => {
+        console.error("Login error:", error.message);
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("token", data.token);
-        console.log("Login successful");
-
-        // Check authentication status after logging in
-        const isAuthenticated = await checkAuth();
-        if (isAuthenticated) {
-          console.log("User is authenticated");
-          window.location.href = "/home"; // Redirect to home page
-        } else {
-          console.log("User is not authenticated");
-        }
-      } else {
-        console.log("Login failed");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-    }
   };
-
   return (
     <Container
-      className="d-flex align-items-center justify-content-center"
+      className="d-flex al  ign-items-center justify-content-center"
       style={{ minHeight: "80vh" }}
     >
       <Card style={{ width: "400px" }} className="p-4">

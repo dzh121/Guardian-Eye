@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card } from "react-bootstrap";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const VideoComponent = ({ videoFilename }) => {
   const [videoStream, setVideoStream] = useState(null);
@@ -11,20 +12,27 @@ const VideoComponent = ({ videoFilename }) => {
 
     const getLatestVideo = async () => {
       try {
-        const response = await fetch("http://localhost:3000/videos", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        if (!response.ok) {
-          throw new Error("Network response was not ok.");
+        const user = getAuth().currentUser;
+        if (user) {
+          const idToken = await user.getIdToken();
+          const response = await fetch("http://localhost:3000/videos", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
+          });
+          if (!response.ok) {
+            throw new Error("Network response was not ok.");
+          }
+          const videoFiles = await response.json();
+          console.log("Video files:", videoFiles);
+          latestVideo = videoFiles.firstVideoName;
+          console.log("Latest video:", latestVideo);
+          fetchVideo();
+        } else {
+          console.log("No user is signed in");
         }
-        const videoFiles = await response.json();
-        console.log("Video files:", videoFiles);
-        latestVideo = videoFiles[videoFiles.length - 1];
-        console.log("Latest video:", latestVideo);
-        fetchVideo();
       } catch (error) {
         console.error("There was a problem fetching the video files:", error);
       }
@@ -33,24 +41,31 @@ const VideoComponent = ({ videoFilename }) => {
       console.log("Fetching video URL...");
       console.log(`Latest video: /video/${latestVideo}`);
       try {
-        const response = await fetch(`/video/${latestVideo}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        console.log("Response status: ", response.status);
+        const user = getAuth().currentUser;
+        if (user) {
+          const idToken = await user.getIdToken();
+          const response = await fetch(`/video/${latestVideo}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
+          });
+          console.log("Response status: ", response.status);
 
-        if (!response.ok) {
-          throw new Error("Network response was not ok.");
+          if (!response.ok) {
+            throw new Error("Network response was not ok.");
+          }
+
+          const blob = await response.blob();
+          console.log("Blob received:", blob);
+
+          // Generate a URL for the blob
+          videoObjectUrl = URL.createObjectURL(blob);
+          setVideoStream(videoObjectUrl);
+        } else {
+          console.log("No user is signed in");
         }
-
-        const blob = await response.blob();
-        console.log("Blob received:", blob);
-
-        // Generate a URL for the blob
-        videoObjectUrl = URL.createObjectURL(blob);
-        setVideoStream(videoObjectUrl);
       } catch (error) {
         console.error("There was a problem fetching the video:", error);
       }
