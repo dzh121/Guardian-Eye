@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 // Import your components here
 import Header from "./Header";
@@ -25,51 +26,37 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.log("No token found");
-        setIsLoggedIn(false);
-        setLoading(false); // Set loading to false after check
-        return;
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsLoggedIn(true); // User is logged in
+      } else {
+        setIsLoggedIn(false); // User is logged out
       }
+      setLoading(false);
+    });
 
-      try {
-        const response = await fetch("http://localhost:3000/check-auth", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setIsLoggedIn(true); // Assuming response indicates successful authentication
-          console.log("Authentication check successful:", data);
-        } else {
-          console.log("Failed to authenticate");
-          setIsLoggedIn(false);
-        }
-      } catch (error) {
-        console.error("Error checking auth status:", error);
-        setIsLoggedIn(false);
-      } finally {
-        setLoading(false); // Set loading to false after check
-      }
-    };
-
-    checkAuthStatus();
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
-  // Function to update the login state, passed to LoginComponent
+  const handleLogout = () => {
+    const auth = getAuth();
+    auth
+      .signOut()
+      .then(() => {
+        setIsLoggedIn(false);
+      })
+      .catch((error) => {
+        console.error("Logout Error", error);
+      });
+  };
   const handleLogin = (status) => {
     setIsLoggedIn(status);
   };
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    setIsLoggedIn(false);
-  };
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   console.log("Rendering App. Current isLoggedIn state:", isLoggedIn);
   if (loading) {
