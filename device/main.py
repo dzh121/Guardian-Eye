@@ -137,7 +137,7 @@ class BufferManager:
             filename = f"output_{int(time.time())}.mp4"
             save_buffer_to_file(buffer_copy, filename)
             print(f"Saved video to {filename}")
-            sf.sendFile(f"./videos/{filename}")
+            sf.sendFile(f"./videos/{filename}", "device1", "location1")
             print(f"Sent video to server")
             self.clear_buffer()
 
