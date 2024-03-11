@@ -43,19 +43,38 @@ app.post("/verify-token", (req, res) => {
     });
 });
 
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: function (req, file, cb) {
-      const houseId = req.headers["house-id"];
-      const uploadPath = path.join(__dirname, "uploads", houseId);
+// const upload = multer({
+//   storage: multer.diskStorage({
+//     destination: function (req, file, cb) {
+//       const houseId = req.headers["house-id"];
+//       const uploadPath = path.join(__dirname, "uploads", houseId);
+//       fs.mkdirSync(uploadPath, { recursive: true });
+//       cb(null, uploadPath);
+//     },
+//     filename: function (req, file, cb) {
+//       cb(null, file.originalname);
+//     },
+//   }),
+// }).single("file");
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uid = req.user.uid;
+    const uploadPath = path.join(__dirname, "uploads", uid);
+
+    // Create the directory if it doesn't exist
+    if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
-      cb(null, uploadPath);
-    },
-    filename: function (req, file, cb) {
-      cb(null, file.originalname);
-    },
-  }),
-}).single("file");
+    }
+
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    // You can use the original file name, or generate a new one
+    cb(null, file.originalname);
+  },
+});
+const upload = multer({ storage: storage });
+
 function verifyToken(req, res, next) {
   const idToken = req.headers.authorization?.split("Bearer ")[1];
 
@@ -75,8 +94,6 @@ function verifyToken(req, res, next) {
 
       // Retrieve additional user data based on UID from Firestore
       const userDoc = await db.collection("users").doc(uid).get();
-      console.log("User document:", userDoc.data());
-      console.log("uid :", uid);
       if (!userDoc.exists) {
         throw new Error("User document not found in database");
       }
@@ -95,11 +112,12 @@ function verifyToken(req, res, next) {
       res.status(403).send("Failed to authenticate token");
     });
 }
-app.post("/upload", verifyToken, upload.single("video"), async (req, res) => {
+app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
   // Extracting metadata from headers
   const deviceID = req.headers["deviceid"];
   const deviceLocation = req.headers["devicelocation"];
   const timeSent = req.headers["timesent"];
+  const timestamp = req.headers["timestamp"];
   const fileName = req.file ? req.file.originalname : req.headers["filename"]; // Assuming file is sent with key 'video'
 
   const uid = req.user.uid; // UID from the verified token
@@ -113,6 +131,7 @@ app.post("/upload", verifyToken, upload.single("video"), async (req, res) => {
       fileName,
       deviceLocation,
       timeSent: new Date(timeSent),
+      timestamp,
     });
 
     res.status(200).send(`Video metadata saved with ID: ${docRef.id}`);
@@ -158,25 +177,37 @@ app.get("/videos", verifyToken, async (req, res) => {
     const uid = req.user.uid;
     const db = admin.firestore();
 
+    // Reference to the user's videos collection
     const videosCollectionRef = db.collection(`users/${uid}/videos`);
-    const videoQuerySnapshot = await videosCollectionRef.limit(1).get();
+    // Query to get the latest video based on timestamp
+    const latestVideoQuerySnapshot = await videosCollectionRef
+      .orderBy("timestamp", "desc") // Order by timestamp in descending order
+      .limit(1) // Get only the latest video
+      .get();
 
-    if (videoQuerySnapshot.empty) {
+    if (latestVideoQuerySnapshot.empty) {
+      console.log("No videos found");
       return res.status(404).send("No videos found");
     }
 
-    const firstVideoName = videoQuerySnapshot.docs[0].data().name;
-    res.status(200).json({ firstVideoName, uid });
+    // Extract the name of the latest video
+    const latestVideoData = latestVideoQuerySnapshot.docs[0].data();
+    res.status(200).json({
+      latestVideoName: latestVideoData.fileName,
+      location: latestVideoData.deviceLocation,
+      timestamp: latestVideoData.timeSent,
+    });
   } catch (error) {
-    console.error("Error retrieving videos:", error);
-    res.status(500).send("Error retrieving videos");
+    console.error("Error retrieving the latest video:", error);
+    res.status(500).send("Error retrieving the latest video");
   }
 });
 
 app.use("/video", verifyToken, async (req, res, next) => {
   try {
     const uid = req.user.uid;
-    console.log(uid);
+    console.log("UID: " + uid);
+    //console log the file name
     const videoDirectory = path.join(__dirname, "uploads", uid);
     // Check if directory exists
     if (!fs.existsSync(videoDirectory)) {
@@ -198,5 +229,3 @@ app.get("*", (req, res) => {
 server.listen(3000, () => {
   console.log("Server running on port 3000");
 });
-
-//need to work on user dat / show videos and such
