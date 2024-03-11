@@ -1,17 +1,41 @@
-import requests
 from datetime import datetime
+import requests
+import json
 
+def authenticate_user(email, password):
+    api_key = "***REMOVED***"  # Replace with your Firebase API Key
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"
+
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "email": email,
+        "password": password,
+        "returnSecureToken": True
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    if response.status_code == 200:
+        return response.json()['idToken']
+    else:
+        raise Exception("Authentication failed")
+
+# Example usage
+token = authenticate_user("***REMOVED***", "***REMOVED***")
 def sendFile(file_name, device_id, device_location):
     url = 'http://localhost:3000/upload'
 
     # Headers with device and file information
     headers = {
+        'authorization': f'Bearer {token}',
         'deviceid': device_id,
         'devicelocation': device_location,
-        'timesent': datetime.now().isoformat(),  # Current time in ISO format
+        'timesent': datetime.now().isoformat(),
+        'timestamp': str(int(datetime.now().timestamp())),
         'filename': file_name
     }
-
     # Open the video file in binary mode
     with open(file_name, 'rb') as f:
         # Send a POST request with the file as the request body and headers
@@ -22,4 +46,5 @@ def sendFile(file_name, device_id, device_location):
         print("File uploaded successfully!")
     else:
         print("Failed to upload file:", response.text)
-sendFile("./videos/output_1709914507.mp4", "device1", "location1")
+print(token)
+sendFile("./videos/output_1710000208.mp4", "device1", "location1")
