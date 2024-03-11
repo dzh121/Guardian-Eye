@@ -4,91 +4,104 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const VideoComponent = ({ videoFilename }) => {
   const [videoStream, setVideoStream] = useState(null);
+  const [videoDetails, setVideoDetails] = useState({
+    location: "",
+    timestamp: "",
+  });
 
   useEffect(() => {
-    // Generate the video URL and clear it on component unmount
     let videoObjectUrl;
-    let latestVideo = null;
 
-    const getLatestVideo = async () => {
+    const fetchUserToken = async () => {
+      const user = getAuth().currentUser;
+      return user ? await user.getIdToken() : null;
+    };
+
+    const fetchLatestVideoFilename = async (idToken) => {
+      const response = await fetch("http://localhost:3000/videos", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok.");
+      }
+
+      const data = await response.json();
+      console.log("data: ", data);
+      setVideoDetails({ location: data.location, timestamp: data.timestamp });
+      return data.latestVideoName;
+    };
+
+    const fetchVideoStream = async (idToken, filename) => {
+      const response = await fetch(`/video/${filename}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Network response was not ok.");
+      }
+
+      const blob = await response.blob();
+      videoObjectUrl = URL.createObjectURL(blob);
+      setVideoStream(videoObjectUrl);
+    };
+
+    const fetchAndSetVideo = async () => {
       try {
-        const user = getAuth().currentUser;
-        if (user) {
-          const idToken = await user.getIdToken();
-          const response = await fetch("http://localhost:3000/videos", {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${idToken}`,
-            },
-          });
-          if (!response.ok) {
-            throw new Error("Network response was not ok.");
-          }
-          const videoFiles = await response.json();
-          console.log("Video files:", videoFiles);
-          latestVideo = videoFiles.firstVideoName;
-          console.log("Latest video:", latestVideo);
-          fetchVideo();
+        const idToken = await fetchUserToken();
+        if (idToken) {
+          const latestVideoFilename = await fetchLatestVideoFilename(idToken);
+          console.log("latestVideoFilename: ", latestVideoFilename);
+          await fetchVideoStream(idToken, latestVideoFilename);
         } else {
           console.log("No user is signed in");
         }
       } catch (error) {
-        console.error("There was a problem fetching the video files:", error);
-      }
-    };
-    const fetchVideo = async () => {
-      console.log("Fetching video URL...");
-      console.log(`Latest video: /video/${latestVideo}`);
-      try {
-        const user = getAuth().currentUser;
-        if (user) {
-          const idToken = await user.getIdToken();
-          const response = await fetch(`/video/${latestVideo}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${idToken}`,
-            },
-          });
-          console.log("Response status: ", response.status);
-
-          if (!response.ok) {
-            throw new Error("Network response was not ok.");
-          }
-
-          const blob = await response.blob();
-          console.log("Blob received:", blob);
-
-          // Generate a URL for the blob
-          videoObjectUrl = URL.createObjectURL(blob);
-          setVideoStream(videoObjectUrl);
-        } else {
-          console.log("No user is signed in");
-        }
-      } catch (error) {
-        console.error("There was a problem fetching the video:", error);
+        console.error("Error:", error);
       }
     };
 
-    getLatestVideo();
+    fetchAndSetVideo();
 
-    // Cleanup function to revoke the object URL
     return () => {
       if (videoObjectUrl) {
         URL.revokeObjectURL(videoObjectUrl);
-        videoObjectUrl = null;
       }
     };
-  }, [videoFilename]); // Depend on videoFilename
+  }, [videoFilename]);
 
-  console.log("Video URL:", videoStream);
+  const convertFirestoreTimestampToDate = (timestamp) => {
+    if (timestamp && timestamp._seconds) {
+      const date = new Date(timestamp._seconds * 1000);
+      const day = date.getDate().toString().padStart(2, "0");
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, "0");
+      const minutes = date.getMinutes().toString().padStart(2, "0");
+      const seconds = date.getSeconds().toString().padStart(2, "0");
+
+      return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
+    }
+    return "";
+  };
 
   return (
     <Card>
       <Card.Body>
         <Card.Title>Uploaded Video</Card.Title>
-        {/* Add a key to the video element to force it to re-render when videoStream changes */}
+        {videoDetails.location && <p>Location: {videoDetails.location}</p>}
+        {videoDetails.timestamp && (
+          <p>
+            Time Sent: {convertFirestoreTimestampToDate(videoDetails.timestamp)}
+          </p>
+        )}
         <video key={videoStream} width="100%" height="auto" controls>
           {videoStream ? (
             <source src={videoStream} type="video/mp4" />
