@@ -23,7 +23,9 @@ def authenticate_user(email, password):
         raise Exception("Authentication failed")
 
 # Example usage
+# token = authenticate_user("***REMOVED***", "***REMOVED***")
 token = authenticate_user("***REMOVED***", "***REMOVED***")
+
 def sendFile(file_name, device_id, device_location):
     url = 'http://localhost:3000/upload'
 
@@ -48,4 +50,4 @@ def sendFile(file_name, device_id, device_location):
     except Exception as e:
         print("Failed to upload file:", e)
 
-# sendFile("./videos/output_1710000208.mp4", "device1", "location1")
+sendFile("./videos/output_1710000208.mp4", "device1", "location1")
