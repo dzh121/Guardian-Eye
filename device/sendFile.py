@@ -33,7 +33,6 @@ def sendFile(file_name, device_id, device_location):
         'deviceid': device_id,
         'devicelocation': device_location,
         'timesent': datetime.now().isoformat(),
-        'timestamp': str(int(datetime.now().timestamp())),
         'filename': file_name
     }
 

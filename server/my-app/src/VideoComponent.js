@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card } from "react-bootstrap";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 
 const VideoComponent = ({ videoFilename }) => {
   const [videoStream, setVideoStream] = useState(null);
@@ -14,36 +14,25 @@ const VideoComponent = ({ videoFilename }) => {
 
     const fetchUserToken = async () => {
       const user = getAuth().currentUser;
-      return user ? await user.getIdToken() : null;
-    };
-
-    const fetchLatestVideoFilename = async (idToken) => {
-      const response = await fetch("http://localhost:3000/videos", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok.");
+      if (user) {
+        console.log("User is signed in, fetching token...");
+        return await user.getIdToken();
+      } else {
+        console.log("No user is signed in");
+        return null;
       }
-
-      const data = await response.json();
-      console.log("data: ", data);
-      setVideoDetails({ location: data.location, timestamp: data.timestamp });
-      return data.latestVideoName;
     };
 
     const fetchVideoStream = async (idToken, filename) => {
+      console.log("Fetching video stream for:", filename);
       const response = await fetch(`/video/${filename}`, {
         method: "GET",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/ json",
           Authorization: `Bearer ${idToken}`,
         },
       });
+
       if (!response.ok) {
         throw new Error("Network response was not ok.");
       }
@@ -53,22 +42,18 @@ const VideoComponent = ({ videoFilename }) => {
       setVideoStream(videoObjectUrl);
     };
 
-    const fetchAndSetVideo = async () => {
-      try {
-        const idToken = await fetchUserToken();
-        if (idToken) {
-          const latestVideoFilename = await fetchLatestVideoFilename(idToken);
-          console.log("latestVideoFilename: ", latestVideoFilename);
-          await fetchVideoStream(idToken, latestVideoFilename);
-        } else {
-          console.log("No user is signed in");
-        }
-      } catch (error) {
-        console.error("Error:", error);
+    const fetchIdAndSetVideo = async () => {
+      const idToken = await fetchUserToken();
+      if (idToken) {
+        setVideoDetails({
+          location: videoFilename.deviceLocation,
+          timestamp: videoFilename.timeSent,
+        });
+        await fetchVideoStream(idToken, videoFilename.fileName);
       }
     };
 
-    fetchAndSetVideo();
+    fetchIdAndSetVideo();
 
     return () => {
       if (videoObjectUrl) {
