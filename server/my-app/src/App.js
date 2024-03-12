@@ -4,10 +4,11 @@ import {
   Routes,
   Route,
   Navigate,
+  Link,
 } from "react-router-dom";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import "./firebase";
 
-// Import your components here
 import Header from "./Header";
 import Footer from "./Footer";
 import MyNavbar from "./MyNavbar";
@@ -16,6 +17,7 @@ import LiveVideoComponent from "./LiveVideoComponent";
 import CameraDetectComponent from "./CameraDetectComponent";
 import SettingsComponent from "./SettingsComponent";
 import LoginComponent from "./LoginComponent";
+import RegisterComponent from "./RegisterComponent";
 
 // Import styles
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -67,6 +69,16 @@ function App() {
       <Header />
       <div className="container my-3">
         {isLoggedIn && <MyNavbar onLogout={handleLogout} />}
+        {!isLoggedIn && (
+          <div className="text-center mb-3">
+            <Link to="/login" className="btn btn-primary me-2">
+              Login
+            </Link>
+            <Link to="/register" className="btn btn-secondary">
+              Register
+            </Link>
+          </div>
+        )}
         <Routes>
           {isLoggedIn ? (
             <>
@@ -83,8 +95,8 @@ function App() {
                 path="/login"
                 element={<LoginComponent onLogin={handleLogin} />}
               />
-              <Route path="*" element={<Navigate to="/login" />} />{" "}
-              {/* Redirect unmatched paths to login for unauthenticated users */}
+              <Route path="/register" element={<RegisterComponent />} />
+              <Route path="*" element={<Navigate to="/login" />} />
             </>
           )}
         </Routes>
