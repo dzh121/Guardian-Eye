@@ -1,73 +1,98 @@
 import React, { useState } from "react";
-import { Form, Button, Card, Container } from "react-bootstrap";
-import { auth } from "./firebase";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { Form, Button, Card, Container, Alert } from "react-bootstrap";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 
 function LoginComponent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [resetPassword, setResetPassword] = useState(false);
 
-  // Function to check if the user is authenticated
+  const auth = getAuth();
+
   const handleLogin = (event) => {
     event.preventDefault();
+    setError(""); // Clear any existing errors
 
-    const auth = getAuth();
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
-        // Get the ID token
-        userCredential.user.getIdToken().then((idToken) => {
-          // Send this token to your server for verification
-          fetch("/verify-token", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ idToken }),
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              console.log("Server response:", data);
-              // Handle response from your server
-            })
-            .catch((error) => {
-              console.error("Error posting token to server:", error);
-            });
-        });
+        // Logged in successfully
+        console.log("Logged in user:", userCredential.user);
       })
       .catch((error) => {
-        console.error("Login error:", error.message);
+        console.error("Login error:", error);
+        setError("Failed to log in. Please check your email and password.");
       });
   };
+
+  const handleForgotPassword = () => {
+    setError(""); // Clear any existing errors
+    if (!email) {
+      setError("Please enter your email to reset password.");
+      return;
+    }
+
+    sendPasswordResetEmail(auth, email)
+      .then(() => {
+        setError("");
+        setResetPassword(true);
+      })
+      .catch((error) => {
+        console.error("Reset password error:", error);
+        setError("Failed to send password reset email.");
+      });
+  };
+
   return (
     <Container
-      className="d-flex al  ign-items-center justify-content-center"
+      className="d-flex align-items-center justify-content-center"
       style={{ minHeight: "80vh" }}
     >
       <Card style={{ width: "400px" }} className="p-4">
-        <Form onSubmit={handleLogin}>
-          <Form.Group className="mb-3" controlId="formBasicEmail">
-            <Form.Label>Email address</Form.Label>
-            <Form.Control
-              type="email"
-              placeholder="Enter email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </Form.Group>
+        <Card.Body>
+          <Card.Title>Login</Card.Title>
+          {error && <Alert variant="danger">{error}</Alert>}
+          {resetPassword && (
+            <Alert variant="success">
+              Check your email for password reset instructions.
+            </Alert>
+          )}
+          <Form onSubmit={handleLogin}>
+            <Form.Group className="mb-3" controlId="formBasicEmail">
+              <Form.Label>Email address</Form.Label>
+              <Form.Control
+                type="email"
+                placeholder="Enter email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </Form.Group>
 
-          <Form.Group className="mb-3" controlId="formBasicPassword">
-            <Form.Label>Password</Form.Label>
-            <Form.Control
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </Form.Group>
-          <Button variant="primary" type="submit">
-            Login
-          </Button>
-        </Form>
+            <Form.Group className="mb-3" controlId="formBasicPassword">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </Form.Group>
+            <Button variant="primary" type="submit">
+              Login
+            </Button>
+            <Button
+              variant="link"
+              onClick={handleForgotPassword}
+              className="mt-3"
+            >
+              Forgot Password?
+            </Button>
+          </Form>
+        </Card.Body>
       </Card>
     </Container>
   );
