@@ -131,7 +131,6 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
       fileName,
       deviceLocation,
       timeSent: new Date(timeSent),
-      timestamp,
     });
 
     res.status(200).send(`Video metadata saved with ID: ${docRef.id}`);
