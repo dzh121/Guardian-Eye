@@ -181,8 +181,8 @@ app.get("/videos", verifyToken, async (req, res) => {
     const videosCollectionRef = db.collection(`users/${uid}/videos`);
     // Query to get the latest video based on timestamp
     const latestVideoQuerySnapshot = await videosCollectionRef
-      .orderBy("timestamp", "desc") // Order by timestamp in descending order
-      .limit(1) // Get only the latest video
+      .orderBy("timeSent", "desc") // Order by timestamp in descending order
+      .limit(10) // Get only the latest video
       .get();
 
     if (latestVideoQuerySnapshot.empty) {
@@ -193,9 +193,7 @@ app.get("/videos", verifyToken, async (req, res) => {
     // Extract the name of the latest video
     const latestVideoData = latestVideoQuerySnapshot.docs[0].data();
     res.status(200).json({
-      latestVideoName: latestVideoData.fileName,
-      location: latestVideoData.deviceLocation,
-      timestamp: latestVideoData.timeSent,
+      videos: latestVideoQuerySnapshot.docs.map((doc) => doc.data()),
     });
   } catch (error) {
     console.error("Error retrieving the latest video:", error);
