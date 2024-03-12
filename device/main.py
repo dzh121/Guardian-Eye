@@ -16,6 +16,8 @@ FACE_RECOGNITION_MODEL_FILE = "dlib_face_recognition_resnet_model_v1.dat"
 OUTPUT_DIR = "videos"
 COOLDOWN_PERIOD = 60  # in seconds
 DETECTION_PERIOD = 15  # in seconds
+DEVICE_ID = "device1"
+DEVICE_LOCATION = "location1"
 
 def load_encodings(filename=ENCODINGS_FILE):
     """Load face encodings from a file."""
@@ -137,7 +139,7 @@ class BufferManager:
             filename = f"output_{int(time.time())}.mp4"
             save_buffer_to_file(buffer_copy, filename)
             print(f"Saved video to {filename}")
-            sf.sendFile(f"./videos/{filename}", "device1", "location1")
+            sf.sendFile(f"./videos/{filename}", DEVICE_ID, DEVICE_LOCATION)
             print(f"Sent video to server")
             self.clear_buffer()
 

@@ -48,4 +48,4 @@ def sendFile(file_name, device_id, device_location):
     except Exception as e:
         print("Failed to upload file:", e)
 
-sendFile("./videos/output_1710000208.mp4", "device1", "location1")
+# sendFile("./videos/output_1710000208.mp4", "device1", "location1")
