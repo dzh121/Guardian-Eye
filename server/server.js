@@ -2,15 +2,12 @@ const express = require("express");
 const http = require("http");
 const path = require("path");
 const cors = require("cors");
-const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const fs = require("fs");
 const { db, admin } = require("./firebase");
 
 const app = express();
 const server = http.createServer(app);
-
-const JWT_SECRET = "tempkey";
 
 const corsOptions = {
   credentials: true,
@@ -43,19 +40,6 @@ app.post("/verify-token", (req, res) => {
     });
 });
 
-// const upload = multer({
-//   storage: multer.diskStorage({
-//     destination: function (req, file, cb) {
-//       const houseId = req.headers["house-id"];
-//       const uploadPath = path.join(__dirname, "uploads", houseId);
-//       fs.mkdirSync(uploadPath, { recursive: true });
-//       cb(null, uploadPath);
-//     },
-//     filename: function (req, file, cb) {
-//       cb(null, file.originalname);
-//     },
-//   }),
-// }).single("file");
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uid = req.user.uid;
@@ -102,7 +86,6 @@ function verifyToken(req, res, next) {
       req.user = {
         uid: decodedToken.uid,
         houseId: userDoc.data().houseId,
-        // Add more fields as needed
       };
 
       next();
@@ -140,37 +123,6 @@ app.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
   }
 });
 
-// app.post("/upload", (req, res) => {
-//   upload(req, res, function (err) {
-//     if (err instanceof multer.MulterError) {
-//       return res.status(500).send("Multer error: " + err.message);
-//     } else if (err) {
-//       return res.status(500).send("Unknown error: " + err.message);
-//     }
-//     res.send("File uploaded successfully.");
-//   });
-//   const houseId = req.headers["house-id"];
-//   const deviceID = req.headers["device-id"];
-//   updateHouseJson(houseId, req.file.originalname, deviceID);
-// });
-
-// app.get("/videos", verifyToken, (req, res) => {
-//   const houseId = req.user.houseId;
-//   const videoDirectory = path.join(__dirname, "uploads/", houseId);
-
-//   fs.readdir(videoDirectory, (err, files) => {
-//     if (err) {
-//       console.log(err);
-//       return res.status(500).send("Unable to retrieve videos");
-//     }
-
-//     const videoFiles = files.filter(
-//       (file) => path.extname(file).toLowerCase() === ".mp4"
-//     );
-//     res.json(videoFiles); // Send the response here
-//   });
-//   // Removed res.send(decoded) to avoid sending two responses
-// });
 app.get("/videos", verifyToken, async (req, res) => {
   try {
     const uid = req.user.uid;
