@@ -22,10 +22,9 @@ code {
 .goBackButton {
   margin-bottom: 20px;
 }
-<<<<<<< HEAD
 .video-container {
   position: relative;
-  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+  padding-bottom: 56.25%;
   height: 0;
   overflow: hidden;
 }
@@ -37,7 +36,7 @@ code {
   width: 100%;
   height: 100%;
   border: none;
-=======
+}
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -137,5 +136,4 @@ code {
 .menu-toggle.shifted {
   margin-left: 250px !important; 
   transition: margin-left 0.3s !important;
->>>>>>> f375c1d9a26f6ff702d2ca4e0de201a92087f753
 }
