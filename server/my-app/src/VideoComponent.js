@@ -87,7 +87,7 @@ const VideoComponent = ({ videoFilename }) => {
             Time Sent: {convertFirestoreTimestampToDate(videoDetails.timestamp)}
           </p>
         )}
-        <video key={videoStream} width="100%" height="auto" controls>
+        <video key={videoStream} width="88%" height="auto" controls>
           {videoStream ? (
             <source src={videoStream} type="video/mp4" />
           ) : (
