@@ -1,11 +1,17 @@
-// LiveFeed.js
 import React from "react";
 
 const LiveVideoComponent = () => {
+  const streamUrl = "http://localhost:8081";
+
   return (
-    <div>
+    <div className="video-container">
       <h2>Live Video Feed</h2>
-      {/* Add your live video feed component here */}
+      <iframe
+        src={streamUrl}
+        className="video-frame"
+        title="Live Video Feed"
+        allowFullScreen
+      ></iframe>
     </div>
   );
 };
