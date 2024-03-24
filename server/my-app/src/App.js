@@ -12,14 +12,13 @@ import Sidebar from "./Sidebar";
 import Footer from "./Footer";
 import HomeComponent from "./HomeComponent";
 import LiveVideoComponent from "./LiveVideoComponent";
-import CameraDetectComponent from "./CameraDetectComponent";
+import SecurityFootageComponent from "./SecurityFootageComponent";
 import SettingsComponent from "./SettingsComponent";
 import LoginComponent from "./LoginComponent";
 import RegisterComponent from "./RegisterComponent";
 
 // Import styles
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./styles.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
 function App() {
@@ -78,8 +77,11 @@ function App() {
           {isLoggedIn ? (
             <>
               <Route path="/home" element={<HomeComponent />} />
-              <Route path="/livefeed" element={<LiveVideoComponent />} />
-              <Route path="/cameradetect" element={<CameraDetectComponent />} />
+              <Route path="/LiveFeed" element={<LiveVideoComponent />} />
+              <Route
+                path="/SecurityFootage"
+                element={<SecurityFootageComponent />}
+              />
               <Route path="/settings" element={<SettingsComponent />} />
               <Route path="/login" element={<Navigate replace to="/home" />} />
               <Route path="*" element={<Navigate replace to="/home" />} />
