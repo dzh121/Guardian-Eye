@@ -72,14 +72,7 @@ const SecurityFootageComponent = () => {
   if (selectedVideo) {
     return (
       <div>
-        <VideoComponent videoFilename={selectedVideo} />
-        <Button
-          onClick={handleGoBack}
-          style={{ marginBottom: "50px" }}
-          variant="primary"
-        >
-          Go Back
-        </Button>
+        <VideoComponent videoFilename={selectedVideo} onGoBack={handleGoBack} />
       </div>
     );
   }

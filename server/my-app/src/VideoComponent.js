@@ -1,24 +1,36 @@
 import React, { useState, useEffect } from "react";
-import { Card } from "react-bootstrap";
+import { Card, Button } from "react-bootstrap";
 import { getAuth } from "firebase/auth";
 
-const VideoComponent = ({ videoFilename }) => {
+const VideoComponent = ({ videoFilename, onGoBack }) => {
   const [videoStream, setVideoStream] = useState(null);
   const [videoDetails, setVideoDetails] = useState({
     location: "",
     timestamp: "",
   });
+  const [theme, setTheme] = useState("light");
 
   useEffect(() => {
+    const handleThemeChange = () => {
+      const isDarkTheme = document.body.classList.contains("darkTheme");
+      setTheme(isDarkTheme ? "dark" : "light");
+    };
+
+    handleThemeChange();
+
+    window.addEventListener("themeChange", handleThemeChange);
+
     let videoObjectUrl;
 
     const fetchUserToken = async () => {
       const user = getAuth().currentUser;
       if (user) {
         console.log("User is signed in, fetching token...");
+        window.removeEventListener("themeChange", handleThemeChange);
         return await user.getIdToken();
       } else {
         console.log("No user is signed in");
+        window.removeEventListener("themeChange", handleThemeChange);
         return null;
       }
     };
@@ -78,14 +90,30 @@ const VideoComponent = ({ videoFilename }) => {
   };
 
   return (
-    <Card>
-      <Card.Body>
+    <Card
+      style={{
+        backgroundColor: theme === "dark" ? "#444" : "#fff",
+        marginBottom: "120px",
+      }}
+    >
+      <Card.Body
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
         <Card.Title>Uploaded Video</Card.Title>
-        {videoDetails.location && <p>Location: {videoDetails.location}</p>}
+        {videoDetails.location && (
+          <Card.Text>
+            <b>Location:</b> {videoDetails.location}
+          </Card.Text>
+        )}
         {videoDetails.timestamp && (
-          <p>
-            Time Sent: {convertFirestoreTimestampToDate(videoDetails.timestamp)}
-          </p>
+          <Card.Text>
+            <b>Time Sent:</b>{" "}
+            {convertFirestoreTimestampToDate(videoDetails.timestamp)}
+          </Card.Text>
         )}
         <video key={videoStream} width="88%" height="auto" controls>
           {videoStream ? (
@@ -94,6 +122,13 @@ const VideoComponent = ({ videoFilename }) => {
             "Loading video..."
           )}
         </video>
+        <Button
+          onClick={onGoBack}
+          style={{ marginTop: "10px" }}
+          variant="primary"
+        >
+          Go Back
+        </Button>
       </Card.Body>
     </Card>
   );

@@ -16,7 +16,7 @@ const Sidebar = ({ isOpen, isLoggedIn, onLogout }) => {
           Live Feed
         </Nav.Link>
         <Nav.Link as={Link} to="/SecurityFootage">
-          Camera Detect
+          Security Footage
         </Nav.Link>
         <Nav.Link as={Link} to="/settings">
           Settings
