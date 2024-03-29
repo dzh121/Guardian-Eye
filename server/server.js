@@ -8,7 +8,7 @@ const { admin } = require("./firebase");
 
 const app = express();
 const server = http.createServer(app);
-const db = admin.firestore(); // Moved firestore initialization to a central place
+const db = admin.firestore();
 
 const corsOptions = {
   credentials: true,
@@ -29,7 +29,6 @@ const verifyToken = require("./verifyToken");
 app.get("/protected", verifyToken, (req, res) => {
   res.json({ message: "Welcome to the protected route!", user: req.user });
 });
-
 // Verify token route
 app.use("/verify-token", require("./routes/verifyTokenRoute"));
 // File upload setup
