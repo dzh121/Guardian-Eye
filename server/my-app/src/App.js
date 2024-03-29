@@ -6,7 +6,9 @@ import {
   Navigate,
 } from "react-router-dom";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import "./firebase";
+import { collection, getDoc, doc } from "firebase/firestore";
+
+import { auth, db } from "./firebase";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
@@ -25,16 +27,32 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [darkTheme, setDarkTheme] = useState(false);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
   useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setIsLoggedIn(true);
+        console.log(user);
+        const uid = user.uid;
+        const userDocRef = doc(db, "users", uid);
+        const userData = await getDoc(userDocRef);
+
+        console.log(userData);
+        if (userData.exists()) {
+          const userDataObj = userData.data();
+          if (userDataObj.theme === "dark") {
+            document.body.classList.add("darkTheme");
+            setDarkTheme(true);
+          } else {
+            document.body.classList.remove("darkTheme");
+            setDarkTheme(false);
+          }
+        }
       } else {
         setIsLoggedIn(false);
       }
@@ -66,12 +84,18 @@ function App() {
 
   return (
     <Router>
-      <Header isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-      <Sidebar
-        isOpen={isSidebarOpen}
+      <Header
+        isSidebarOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
         isLoggedIn={isLoggedIn}
-        onLogout={handleLogout}
       />
+      {isLoggedIn ? (
+        <Sidebar
+          isOpen={isSidebarOpen}
+          isLoggedIn={isLoggedIn}
+          onLogout={handleLogout}
+        />
+      ) : null}
       <div className={`main-content ${isSidebarOpen ? "shifted" : ""}`}>
         <Routes>
           {isLoggedIn ? (
