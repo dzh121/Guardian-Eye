@@ -32,9 +32,9 @@ def sendFile(file_name, device_id, device_location):
     # Headers with device and file information
     headers = {
         'authorization': f'Bearer {token}',
-        'deviceid': device_id,
-        'devicelocation': device_location,
-        'timesent': datetime.now().isoformat(),
+        'deviceID': device_id,
+        'deviceLocation': device_location,
+        'timeSent': datetime.now().isoformat(),
         'filename': file_name
     }
 
