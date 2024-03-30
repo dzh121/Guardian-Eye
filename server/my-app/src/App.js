@@ -37,12 +37,10 @@ function App() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setIsLoggedIn(true);
-        console.log(user);
         const uid = user.uid;
         const userDocRef = doc(db, "users", uid);
         const userData = await getDoc(userDocRef);
 
-        console.log(userData);
         if (userData.exists()) {
           const userDataObj = userData.data();
           if (userDataObj.theme === "dark") {
