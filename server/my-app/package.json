@@ -9,6 +9,7 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.6.7",
     "bootstrap": "^5.3.3",
+    "dotenv": "^16.4.5",
     "firebase": "^10.8.1",
     "firebase-admin": "^12.0.0",
     "fontawesome-free": "^1.0.4",
@@ -48,5 +49,4 @@
     "nth-check": "^2.1.1",
     "postcss": "^8.4.31"
   }
-
 }
