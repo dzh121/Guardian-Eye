@@ -7,6 +7,5 @@ device/*$py.class
 # Virtualenv
 venv/
 ENV/
-
-device/.env
-device/admin.json
+.env
+admin.json
