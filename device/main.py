@@ -8,16 +8,21 @@ from collections import deque
 import threading
 import subprocess
 import sendFile as sf
+import json
+from dotenv import load_dotenv
+
+import requests
 
 # Configuration and constants
 ENCODINGS_FILE = "encodings.dat"
 SHAPE_PREDICTOR_FILE = "shape_predictor_68_face_landmarks.dat"
 FACE_RECOGNITION_MODEL_FILE = "dlib_face_recognition_resnet_model_v1.dat"
-OUTPUT_DIR = "videos"
-COOLDOWN_PERIOD = 60  # in seconds
-DETECTION_PERIOD = 15  # in seconds
-DEVICE_ID = "device1"
-DEVICE_LOCATION = "location1"
+
+load_dotenv()
+EMAIL = os.getenv('EMAIL')
+PASSWORD = os.getenv('PASSWORD')
+DEVICE_LOCATION = os.getenv('LOCATION')
+DEVICE_ID = os.getenv('DEVICE_ID')
 
 def load_encodings(filename=ENCODINGS_FILE):
     """Load face encodings from a file."""
@@ -84,7 +89,6 @@ def save_buffer_to_file(buffer, filename):
     out.release()
     re_encode_video(f"./videos/{filename}")
 
-
 def re_encode_video(filepath, bitrate='1860k'):
     # Create a temporary output file name
     tmp_filepath = filepath + '.tmp.mp4'
@@ -107,6 +111,10 @@ class BufferManager:
         self.lock = threading.Lock()
 
     def add_frame(self, frame):
+        # print face_detected and buffer length with print stametned
+        print(f"Face Detected: {self.face_detected}")
+
+
         should_save = False
         with self.lock:
             self.buffer.append(frame)
@@ -139,41 +147,76 @@ class BufferManager:
             filename = f"output_{int(time.time())}.mp4"
             save_buffer_to_file(buffer_copy, filename)
             print(f"Saved video to {filename}")
-            sf.sendFile(f"./videos/{filename}", DEVICE_ID, DEVICE_LOCATION)
+            sf.sendFile(f"./videos/{filename}", DEVICE_ID, DEVICE_LOCATION, authenticate_user(EMAIL, PASSWORD))
             print(f"Sent video to server")
             self.clear_buffer()
 
-
+    def get_next_frame_for_processing(self):
+        with self.lock:
+            if self.buffer:
+                return self.buffer[-1]  # get the most recent frame
+            return None
 
 
     def clear_buffer(self):
         self.buffer.clear()
 
+def authenticate_user(email, password):
+    api_key = "AIzaSyDz8YBJxq8z9o8lfOujbbzJZ49IWrNUSyw"  # Replace with your Firebase API Key
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"
 
-def frame_capture_thread(video_capture, buffer_manager):
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "email": email,
+        "password": password,
+        "returnSecureToken": True
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    if response.status_code == 200:
+        return response.json()['idToken']
+    else:
+        raise Exception("Authentication failed")
+
+def frame_capture_thread(video_url, buffer_manager):
+    token = authenticate_user(EMAIL, PASSWORD)
+    headers = {'Authorization': token}
+    with requests.get(video_url, headers=headers,stream=True) as r:
+        print(token)
+        if r.status_code != 200:
+            print(f"Failed to connect to {video_url}, Status code: {r.status_code}")
+            return
+
+        bytes_buffer = bytes()
+        for chunk in r.iter_content(chunk_size=1024):
+            bytes_buffer += chunk
+            a = bytes_buffer.find(b'\xff\xd8')  # JPEG start
+            b = bytes_buffer.find(b'\xff\xd9')  # JPEG end
+            if a != -1 and b != -1:
+                jpg = bytes_buffer[a:b + 2]
+                bytes_buffer = bytes_buffer[b + 2:]
+                frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+                if frame is not None:
+                    buffer_manager.add_frame(frame)
+
+def face_detection_thread(buffer_manager, known_face_encodings, face_detector, shape_predictor, face_recognition_model, n):
+    frame_counter = 0
+
     while True:
-        ret, frame = video_capture.read()
-        if not ret:
-            break
-        buffer_manager.add_frame(frame)
+        if frame_counter % n == 0 and (not buffer_manager.face_detected):
+            frame = buffer_manager.get_next_frame_for_processing()
+            if frame is not None:
+                face_locations, face_names = process_frame(frame, known_face_encodings, face_detector, shape_predictor, face_recognition_model)
+                face_detected = "Unknown" in face_names
+                buffer_manager.process_detection(face_detected)
 
-def face_detection_thread(video_capture, buffer_manager, known_face_encodings, face_detector, shape_predictor, face_recognition_model):
-    while video_capture.isOpened():
-        ret, frame = video_capture.read()
-        if not ret:
-            break
 
-        face_locations, face_names = process_frame(frame, known_face_encodings, face_detector, shape_predictor, face_recognition_model)
-        face_detected = "Unknown" in face_names
-        buffer_manager.process_detection(face_detected)
-
-        # Draw results and show the frame
-        # draw_results(frame, face_locations, face_names)
-        # cv2.imshow("Video", frame)
-
-        # Break the loop if 'q' is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        frame_counter += 1
+        # Implement a short sleep to prevent this loop from consuming too much CPU
+        time.sleep(0.01)
 
 def main():
     known_face_encodings = load_encodings()
@@ -186,26 +229,23 @@ def main():
     else:
         print("CUDA is not being used by dlib (may result in slower performance)")
 
-    video_capture = cv2.VideoCapture(0)
-    if not video_capture.isOpened():
-        raise RuntimeError("Could not open video source")
-
-    fps = max(video_capture.get(cv2.CAP_PROP_FPS), 1)
+    # Set FPS to a fixed value or determine it dynamically
+    fps = 30  # This is an example; adjust based on your camera's capability or streaming configuration
     buffer_manager = BufferManager(fps)
+    n = 10 # Process every 10th frame for face detection
 
-    capture_thread = threading.Thread(target=frame_capture_thread, args=(video_capture, buffer_manager))
+    video_url = "http://localhost:5000/video_feed"
+    capture_thread = threading.Thread(target=frame_capture_thread, args=(video_url, buffer_manager))
     detection_thread = threading.Thread(target=face_detection_thread, args=(
-    video_capture, buffer_manager, known_face_encodings, face_detector, shape_predictor, face_recognition_model))
+        buffer_manager, known_face_encodings, face_detector, shape_predictor, face_recognition_model, n))
 
     capture_thread.start()
     detection_thread.start()
 
-    # Wait for the threads to finish
     capture_thread.join()
     detection_thread.join()
 
-    video_capture.release()
-    cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()
