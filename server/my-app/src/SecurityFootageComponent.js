@@ -72,6 +72,7 @@ const SecurityFootageComponent = () => {
   if (selectedVideo) {
     return (
       <div>
+<<<<<<< HEAD
         <VideoComponent videoFilename={selectedVideo} />
         <Button
           onClick={handleGoBack}
@@ -80,6 +81,9 @@ const SecurityFootageComponent = () => {
         >
           Go Back
         </Button>
+=======
+        <VideoComponent videoFilename={selectedVideo} onGoBack={handleGoBack} />
+>>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
       </div>
     );
   }

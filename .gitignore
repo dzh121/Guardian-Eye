@@ -1,0 +1,11 @@
+/device/admin.json
+/device/.env
+device/__pycache__/
+device/*.py[cod]
+device/*$py.class
+
+# Virtualenv
+venv/
+ENV/
+.env
+admin.json
