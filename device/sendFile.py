@@ -8,7 +8,7 @@ def sendFile(file_name, device_id, device_location, token):
         'authorization': f'Bearer {token}',
         'deviceID': device_id,
         'deviceLocation': device_location,
-        'timeSent': datetime.now().isoformat(),
+        'timeSent': datetime.fromtimestamp(int(file_name.split('_')[1].split('.')[0])).isoformat(),
         'filename': file_name
     }
 
@@ -23,5 +23,4 @@ def sendFile(file_name, device_id, device_location, token):
                 print("Failed to upload file:", response.text)
     except Exception as e:
         print("Failed to upload file:", e)
-
-#sendFile("./videos/output_1710000208.mp4", "device1", "location1")
+# sendFile("./videos/output_1711798245.mp4", "device1", "location1",token)
