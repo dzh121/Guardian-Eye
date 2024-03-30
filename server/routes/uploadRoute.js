@@ -1,7 +1,12 @@
-const db = require("../firebase").db;
+const { admin, db } = require("../firebase");
 
 module.exports = async (req, res) => {
-  const { deviceID, deviceLocation, timeSent } = req.headers;
+  const {
+    deviceid: deviceID,
+    devicelocation: deviceLocation,
+    timesent: timeSent,
+  } = req.headers;
+
   const fileName = req.file ? req.file.originalname : req.headers.filename;
   const uid = req.user.uid;
 
@@ -14,9 +19,8 @@ module.exports = async (req, res) => {
       deviceLocation,
       timeSent: new Date(timeSent),
     });
-
     res.status(200).send(`Video metadata saved with ID: ${docRef.id}`);
   } catch (error) {
-    res.status(500).send("Error saving video metadata");
+    res.status(500).send("Error saving video metadata: " + error.message);
   }
 };
