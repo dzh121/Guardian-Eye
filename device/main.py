@@ -23,7 +23,7 @@ EMAIL = os.getenv('EMAIL')
 PASSWORD = os.getenv('PASSWORD')
 DEVICE_LOCATION = os.getenv('LOCATION')
 DEVICE_ID = os.getenv('DEVICE_ID')
-
+API_KEY = os.getenv('API_KEY')
 def load_encodings(filename=ENCODINGS_FILE):
     """Load face encodings from a file."""
     if os.path.exists(filename):
