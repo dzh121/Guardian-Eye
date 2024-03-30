@@ -9,7 +9,7 @@ camera = cv2.VideoCapture(0)  # Initialize camera outside of the gen_frames func
 camera_lock = threading.Lock()  # A lock to ensure thread-safe access to the camera
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate('admin.json')
+cred = credentials.Certificate('./admin.json')
 firebase_admin.initialize_app(cred)
 
 def verify_token(token):
