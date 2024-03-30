@@ -4,7 +4,7 @@ const serviceAccount = require("./admin.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  storageBucket: ***REMOVED***
+  storageBucket: "face-recognition-system-dbe5e.appspot.com",
 });
 
 const db = admin.firestore();
