@@ -162,8 +162,7 @@ class BufferManager:
         self.buffer.clear()
 
 def authenticate_user(email, password):
-    api_key = "***REMOVED***"  # Replace with your Firebase API Key
-    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
 
     headers = {
         "Content-Type": "application/json"
