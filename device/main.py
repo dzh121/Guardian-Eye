@@ -23,7 +23,7 @@ EMAIL = os.getenv('EMAIL')
 PASSWORD = os.getenv('PASSWORD')
 DEVICE_LOCATION = os.getenv('LOCATION')
 DEVICE_ID = os.getenv('DEVICE_ID')
-
+API_KEY = os.getenv('API_KEY')
 def load_encodings(filename=ENCODINGS_FILE):
     """Load face encodings from a file."""
     if os.path.exists(filename):
@@ -162,8 +162,7 @@ class BufferManager:
         self.buffer.clear()
 
 def authenticate_user(email, password):
-    api_key = "AIzaSyDz8YBJxq8z9o8lfOujbbzJZ49IWrNUSyw"  # Replace with your Firebase API Key
-    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
 
     headers = {
         "Content-Type": "application/json"
