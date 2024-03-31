@@ -2,7 +2,7 @@
   "type": "service_account",
   "project_id": "your_project_id",
   "private_key_id": "your_private_key_id",
-  "private_key": "***REMOVED***\nyour_private_key_here\n***REMOVED***\n",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nyour_private_key_here\n-----END PRIVATE KEY-----\n",
   "client_email": "your_firebase_adminsdk_email",
   "client_id": "your_client_id",
   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
