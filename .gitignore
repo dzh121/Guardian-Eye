@@ -10,3 +10,4 @@ ENV/
 .env
 admin.json
 ..bfg-report
+replacements.txt
