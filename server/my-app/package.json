@@ -9,13 +9,11 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.6.7",
     "bootstrap": "^5.3.3",
-<<<<<<< HEAD
-=======
     "dotenv": "^16.4.5",
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
     "firebase": "^10.8.1",
     "firebase-admin": "^12.0.0",
     "fontawesome-free": "^1.0.4",
+    "moment": "^2.30.1",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.1",
     "react-dom": "^18.2.0",
@@ -52,5 +50,4 @@
     "nth-check": "^2.1.1",
     "postcss": "^8.4.31"
   }
-
 }
