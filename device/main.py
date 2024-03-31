@@ -101,6 +101,7 @@ def re_encode_video(filepath, bitrate='1860k'):
     # Replace the original file with the new re-encoded file
     os.replace(tmp_filepath, filepath)
 
+
 class BufferManager:
     def __init__(self, fps):
         self.fps = fps

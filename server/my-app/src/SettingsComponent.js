@@ -6,6 +6,8 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   Alert,
+  Row,
+  Col,
 } from "react-bootstrap";
 import {
   updateEmail,
@@ -15,6 +17,7 @@ import {
 } from "firebase/auth";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
+import { getAuth } from "firebase/auth";
 
 const SettingsComponent = () => {
   const [email, setEmail] = useState("");
@@ -27,6 +30,7 @@ const SettingsComponent = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const user = auth.currentUser;
   const userRef = user ? doc(db, "users", user.uid) : null;
+  const [cameras, setCameras] = useState([]);
 
   useEffect(() => {
     if (user) {
@@ -40,8 +44,36 @@ const SettingsComponent = () => {
         }
       });
     }
+    const fetchCameras = async () => {
+      // Replace this with your API call or Firebase call to fetch cameras
+      const token = await getAuth().currentUser.getIdToken();
+      const response = await fetch(
+        `http://localhost:8080/devices?token=${token}`
+      );
+
+      const camerasData = await response.json();
+      setCameras(camerasData);
+    };
+
+    fetchCameras();
   }, []);
 
+  const handleRemoveCamera = async (cameraId) => {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      await fetch(`http://localhost:8080/remove-device?token=${token}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: cameraId }),
+      });
+      setCameras(cameras.filter((camera) => camera.id !== cameraId));
+      setSuccess("Camera removed successfully!");
+    } catch (error) {
+      setError("Error removing camera");
+    }
+  };
   const handleChange = (setState) => (event) => {
     setState(event.target.value);
     setSuccess("");
@@ -189,7 +221,29 @@ const SettingsComponent = () => {
             </ToggleButton>
           </ToggleButtonGroup>
         </Form.Group>
-
+        <h3 className="mt-4">Connected Cameras</h3>
+        {cameras.length > 0 ? (
+          cameras.map((camera) => (
+            <Row key={camera.id} className="align-items-center mb-2">
+              <Col md={8} sm={6}>
+                <p className="mb-0">
+                  {camera.id} - {camera.location}
+                </p>
+              </Col>
+              <Col md={4} sm={6} className="text-md-right text-sm-left">
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  onClick={() => handleRemoveCamera(camera.id)}
+                >
+                  Remove
+                </Button>
+              </Col>
+            </Row>
+          ))
+        ) : (
+          <p>No cameras connected</p>
+        )}
         <Button variant="primary" type="submit">
           Save Changes
         </Button>
