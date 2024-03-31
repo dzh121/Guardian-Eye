@@ -8,26 +8,15 @@ from collections import deque
 import threading
 import subprocess
 import sendFile as sf
-<<<<<<< HEAD
-=======
 import json
 from dotenv import load_dotenv
 
 import requests
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
 
 # Configuration and constants
 ENCODINGS_FILE = "encodings.dat"
 SHAPE_PREDICTOR_FILE = "shape_predictor_68_face_landmarks.dat"
 FACE_RECOGNITION_MODEL_FILE = "dlib_face_recognition_resnet_model_v1.dat"
-<<<<<<< HEAD
-OUTPUT_DIR = "videos"
-COOLDOWN_PERIOD = 60  # in seconds
-DETECTION_PERIOD = 15  # in seconds
-DEVICE_ID = "device1"
-DEVICE_LOCATION = "location1"
-=======
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
 
 load_dotenv()
 EMAIL = os.getenv('EMAIL')
@@ -170,11 +159,7 @@ class BufferManager:
             filename = f"output_{int(time.time())}.mp4"
             save_buffer_to_file(buffer_copy, filename)
             print(f"Saved video to {filename}")
-<<<<<<< HEAD
-            sf.sendFile(f"./videos/{filename}", DEVICE_ID, DEVICE_LOCATION)
-=======
             sf.sendFile(f"./videos/{filename}", DEVICE_ID, DEVICE_LOCATION, authenticate_user(EMAIL, PASSWORD))
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
             print(f"Sent video to server")
             self.clear_buffer()
 
@@ -240,23 +225,9 @@ def face_detection_thread(buffer_manager, known_face_encodings, face_detector, s
                 buffer_manager.process_detection(face_detected)
 
 
-<<<<<<< HEAD
-        face_locations, face_names = process_frame(frame, known_face_encodings, face_detector, shape_predictor, face_recognition_model)
-        face_detected = "Unknown" in face_names
-        buffer_manager.process_detection(face_detected)
-
-        # Draw results and show the frame
-        # draw_results(frame, face_locations, face_names)
-        # cv2.imshow("Video", frame)
-
-        # Break the loop if 'q' is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-=======
         frame_counter += 1
         # Implement a short sleep to prevent this loop from consuming too much CPU
         time.sleep(0.01)
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
 
 def main():
     known_face_encodings = load_encodings()

@@ -6,13 +6,9 @@ import {
   Navigate,
 } from "react-router-dom";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-<<<<<<< HEAD
-import "./firebase";
-=======
 import { collection, getDoc, doc } from "firebase/firestore";
 
 import { auth, db } from "./firebase";
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
@@ -31,28 +27,13 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-<<<<<<< HEAD
-=======
   const [darkTheme, setDarkTheme] = useState(false);
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
   useEffect(() => {
-<<<<<<< HEAD
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsLoggedIn(true);
-      } else {
-        setIsLoggedIn(false);
-      }
-      setLoading(false);
-    });
-
-=======
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setIsLoggedIn(true);
@@ -76,7 +57,6 @@ function App() {
       setLoading(false);
     });
 
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
     return () => unsubscribe();
   }, []);
 
@@ -102,14 +82,6 @@ function App() {
 
   return (
     <Router>
-<<<<<<< HEAD
-      <Header isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-      <Sidebar
-        isOpen={isSidebarOpen}
-        isLoggedIn={isLoggedIn}
-        onLogout={handleLogout}
-      />
-=======
       <Header
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={toggleSidebar}
@@ -122,7 +94,6 @@ function App() {
           onLogout={handleLogout}
         />
       ) : null}
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
       <div className={`main-content ${isSidebarOpen ? "shifted" : ""}`}>
         <Routes>
           {isLoggedIn ? (

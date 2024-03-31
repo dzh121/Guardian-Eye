@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
-<<<<<<< HEAD
-import { Card } from "react-bootstrap";
-=======
 import { Card, Button } from "react-bootstrap";
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
 import { getAuth } from "firebase/auth";
 
 const VideoComponent = ({ videoFilename, onGoBack }) => {
@@ -12,10 +8,6 @@ const VideoComponent = ({ videoFilename, onGoBack }) => {
     location: "",
     timestamp: "",
   });
-<<<<<<< HEAD
-
-  useEffect(() => {
-=======
   const [theme, setTheme] = useState("light");
 
   useEffect(() => {
@@ -28,24 +20,17 @@ const VideoComponent = ({ videoFilename, onGoBack }) => {
 
     window.addEventListener("themeChange", handleThemeChange);
 
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
     let videoObjectUrl;
 
     const fetchUserToken = async () => {
       const user = getAuth().currentUser;
       if (user) {
         console.log("User is signed in, fetching token...");
-<<<<<<< HEAD
-        return await user.getIdToken();
-      } else {
-        console.log("No user is signed in");
-=======
         window.removeEventListener("themeChange", handleThemeChange);
         return await user.getIdToken();
       } else {
         console.log("No user is signed in");
         window.removeEventListener("themeChange", handleThemeChange);
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
         return null;
       }
     };
@@ -119,13 +104,6 @@ const VideoComponent = ({ videoFilename, onGoBack }) => {
         }}
       >
         <Card.Title>Uploaded Video</Card.Title>
-<<<<<<< HEAD
-        {videoDetails.location && <p>Location: {videoDetails.location}</p>}
-        {videoDetails.timestamp && (
-          <p>
-            Time Sent: {convertFirestoreTimestampToDate(videoDetails.timestamp)}
-          </p>
-=======
         {videoDetails.location && (
           <Card.Text>
             <b>Location:</b> {videoDetails.location}
@@ -136,7 +114,6 @@ const VideoComponent = ({ videoFilename, onGoBack }) => {
             <b>Time Sent:</b>{" "}
             {convertFirestoreTimestampToDate(videoDetails.timestamp)}
           </Card.Text>
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
         )}
         <video key={videoStream} width="88%" height="auto" controls>
           {videoStream ? (

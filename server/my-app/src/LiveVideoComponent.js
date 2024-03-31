@@ -1,17 +1,4 @@
 import React, { useState, useEffect } from "react";
-<<<<<<< HEAD
-
-const LiveVideoComponent = () => {
-  const streamUrl = "http://localhost:8081";
-  const [isOnline, setIsOnline] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const checkStreamUrl = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(streamUrl, { mode: "no-cors" });
-=======
 import { Card } from "react-bootstrap"; // Import the React Bootstrap card component
 import { auth } from "./firebase";
 
@@ -30,44 +17,19 @@ const LiveVideoComponent = () => {
 
         setIsLoading(true);
         const response = await fetch(urlWithToken);
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
         if (response.ok) {
           setIsOnline(true);
         } else {
           setIsOnline(false);
         }
       } catch (error) {
-<<<<<<< HEAD
-=======
         console.error("Error fetching video feed:", error);
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
         setIsOnline(false);
       } finally {
         setIsLoading(false);
       }
     };
 
-<<<<<<< HEAD
-    checkStreamUrl();
-  }, []);
-
-  return (
-    <div className="video-container">
-      <h2>Live Video Feed</h2>
-      {isLoading ? (
-        <p>Loading...</p>
-      ) : isOnline ? (
-        <iframe
-          src={streamUrl}
-          className="video-frame"
-          title="Live Video Feed"
-          allowFullScreen
-        ></iframe>
-      ) : (
-        <p>Camera is not online</p>
-      )}
-    </div>
-=======
     fetchStreamUrl();
     const handleThemeChange = () => {
       const isDarkTheme = document.body.classList.contains("darkTheme");
@@ -114,7 +76,6 @@ const LiveVideoComponent = () => {
         )}
       </Card.Body>
     </Card>
->>>>>>> 800221e806b0edeb114d9f7df6b7c67f896f13b0
   );
 };
 
