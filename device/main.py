@@ -10,7 +10,7 @@ import subprocess
 import sendFile as sf
 import json
 from dotenv import load_dotenv
-
+import deviceStream
 import requests
 
 # Configuration and constants
@@ -24,6 +24,8 @@ PASSWORD = os.getenv('PASSWORD')
 DEVICE_LOCATION = os.getenv('LOCATION')
 DEVICE_ID = os.getenv('DEVICE_ID')
 API_KEY = os.getenv('API_KEY')
+PORT = None
+
 def load_encodings(filename=ENCODINGS_FILE):
     """Load face encodings from a file."""
     if os.path.exists(filename):
@@ -183,8 +185,8 @@ def authenticate_user(email, password):
 
 def frame_capture_thread(video_url, buffer_manager):
     token = authenticate_user(EMAIL, PASSWORD)
-    headers = {'Authorization': token}
-    with requests.get(video_url, headers=headers,stream=True) as r:
+    video_url+=f"?token={token}"
+    with requests.get(video_url,stream=True) as r:
         print(token)
         if r.status_code != 200:
             print(f"Failed to connect to {video_url}, Status code: {r.status_code}")
@@ -234,7 +236,7 @@ def main():
     buffer_manager = BufferManager(fps)
     n = 10 # Process every 10th frame for face detection
 
-    video_url = "http://localhost:5000/video_feed"
+    video_url = f"http://localhost:{PORT}/video_feed"
     capture_thread = threading.Thread(target=frame_capture_thread, args=(video_url, buffer_manager))
     detection_thread = threading.Thread(target=face_detection_thread, args=(
         buffer_manager, known_face_encodings, face_detector, shape_predictor, face_recognition_model, n))
@@ -247,5 +249,9 @@ def main():
 
 
 
+
 if __name__ == "__main__":
+    device_stream = deviceStream.DeviceStream()
+    PORT = device_stream.get_port()
+    device_stream.run_server(in_background=True)
     main()
