@@ -119,7 +119,6 @@ const LiveVideoComponent = () => {
                 src={videoUrl}
                 title="Live Video Feed"
                 style={{ width: "100%", height: "700px" }}
-                onLoad={handleIframeLoad}
                 allowFullScreen
               ></iframe>
             )

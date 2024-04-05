@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import { Form, Button, Alert, Card, Container } from "react-bootstrap";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
 
 function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,7 +35,9 @@ function Register() {
       setError(error.message);
     }
   };
-
+  const navigateToLogin = () => {
+    navigate("/login");
+  };
   return (
     <Container
       className="d-flex align-items-center justify-content-center"
@@ -76,6 +80,9 @@ function Register() {
 
             <Button variant="primary" type="submit">
               Register
+            </Button>
+            <Button variant="link" onClick={navigateToLogin} className="mt-3">
+              Already have an account? Login
             </Button>
           </Form>
         </Card.Body>

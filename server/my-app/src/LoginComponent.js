@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 function LoginComponent() {
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ function LoginComponent() {
   const [resetPassword, setResetPassword] = useState(false);
 
   const auth = getAuth();
+  const navigate = useNavigate();
 
   const handleLogin = (event) => {
     event.preventDefault();
@@ -24,7 +26,6 @@ function LoginComponent() {
         console.log("Logged in user:", userCredential.user);
       })
       .catch((error) => {
-        console.error("Login error:", error);
         setError("Failed to log in. Please check your email and password.");
       });
   };
@@ -42,11 +43,12 @@ function LoginComponent() {
         setResetPassword(true);
       })
       .catch((error) => {
-        console.error("Reset password error:", error);
         setError("Failed to send password reset email.");
       });
   };
-
+  const navigateToRegister = () => {
+    navigate("/register");
+  };
   return (
     <Container
       className="d-flex align-items-center justify-content-center"
@@ -90,6 +92,13 @@ function LoginComponent() {
               className="mt-3"
             >
               Forgot Password?
+            </Button>
+            <Button
+              variant="link"
+              onClick={navigateToRegister}
+              className="mt-3"
+            >
+              Don't have an account? Register
             </Button>
           </Form>
         </Card.Body>
