@@ -18,6 +18,7 @@ function LoginComponent() {
 
   const handleLogin = (event) => {
     event.preventDefault();
+    setResetPassword(false); // Reset password state
     setError(""); // Clear any existing errors
 
     signInWithEmailAndPassword(auth, email, password)
@@ -31,6 +32,7 @@ function LoginComponent() {
   };
 
   const handleForgotPassword = () => {
+    setResetPassword(false);
     setError(""); // Clear any existing errors
     if (!email) {
       setError("Please enter your email to reset password.");
