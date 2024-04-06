@@ -28,6 +28,9 @@ function Register() {
       await setDoc(doc(db, "users", user.uid), {
         name: name,
         email: email,
+        notifications: true,
+        recognizeFaces: true,
+        theme: "light",
       });
 
       // Redirect or do something upon successful registration

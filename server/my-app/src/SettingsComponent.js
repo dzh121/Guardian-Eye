@@ -24,6 +24,7 @@ const SettingsComponent = () => {
   const [name, setName] = useState(""); // Added for user name
   const [password, setPassword] = useState("");
   const [notifications, setNotifications] = useState(true);
+  const [recognizeFaces, setRecognizeFaces] = useState(true);
   const [theme, setTheme] = useState("light");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -37,10 +38,12 @@ const SettingsComponent = () => {
       getDoc(userRef).then((docSnap) => {
         if (docSnap.exists()) {
           const userData = docSnap.data();
+          console.log("userData", userData);
           setEmail(userData.email || "");
           setName(userData.name || "");
-          setNotifications(userData.notifications || true);
+          setNotifications(userData.notifications);
           setTheme(userData.theme || "light");
+          setRecognizeFaces(userData.recognizeFaces);
         }
       });
     }
@@ -87,6 +90,10 @@ const SettingsComponent = () => {
     setNotifications(e.target.checked);
     setSuccess("");
   };
+  const handleRecognizeFaces = (e) => {
+    setRecognizeFaces(e.target.checked);
+    setSuccess("");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -114,7 +121,13 @@ const SettingsComponent = () => {
       await updateEmail(user, email);
 
       // Update Firestore data (excluding the password)
-      await updateDoc(userRef, { email, name, notifications, theme });
+      await updateDoc(userRef, {
+        email,
+        name,
+        notifications,
+        recognizeFaces,
+        theme,
+      });
 
       if (theme === "dark") {
         document.body.classList.add("darkTheme");
@@ -189,6 +202,16 @@ const SettingsComponent = () => {
             label="Enable Notifications"
             checked={notifications}
             onChange={handleNotificationsChange}
+            className="d-flex justify-content-center"
+          />
+        </Form.Group>
+
+        <Form.Group controlId="formBasicCheckbox" className="mb-3">
+          <Form.Check
+            type="checkbox"
+            label="Enable Face Recognition"
+            checked={recognizeFaces}
+            onChange={handleRecognizeFaces}
             className="d-flex justify-content-center"
           />
         </Form.Group>
