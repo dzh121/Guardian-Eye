@@ -11,8 +11,9 @@ camera = cv2.VideoCapture(0)  # Initialize camera outside of the gen_frames func
 camera_lock = threading.Lock()  # A lock to ensure thread-safe access to the camera
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate('./admin.json')
+cred = credentials.Certificate("./admin.json")
 firebase_admin.initialize_app(cred)
+
 
 def verify_token(token):
     try:
@@ -26,6 +27,7 @@ def verify_token(token):
         print(e)
         return None
 
+
 def gen_frames():
     while True:
         with camera_lock:
@@ -33,27 +35,30 @@ def gen_frames():
             if not success:
                 break
 
-        ret, buffer = cv2.imencode('.jpg', frame)
+        ret, buffer = cv2.imencode(".jpg", frame)
         frame = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
 
-@app.route('/video_feed')
+
+@app.route("/video_feed")
 def video_feed():
     # Extract token from request headers or query parameters
-    bearer_token = request.headers.get('Authorization')
-    if bearer_token and bearer_token.startswith('Bearer '):
+    bearer_token = request.headers.get("Authorization")
+    if bearer_token and bearer_token.startswith("Bearer "):
         # Extract the token from the Authorization header (Bearer Token)
-        token = bearer_token.split(' ')[1]
+        token = bearer_token.split(" ")[1]
     else:
         # Fallback to query parameters if Authorization header is not present
-        token = request.args.get('token')
+        token = request.args.get("token")
 
     user = verify_token(token)
     if user:
-        return Response(gen_frames(),
-                        mimetype='multipart/x-mixed-replace; boundary=frame')
+        return Response(
+            gen_frames(), mimetype="multipart/x-mixed-replace; boundary=frame"
+        )
     else:
-        abort(401, 'Unauthorized access')
-if __name__ == '__main__':
-    app.run(host='localhost', port=5000, threaded=True)
+        abort(401, "Unauthorized access")
+
+
+if __name__ == "__main__":
+    app.run(host="localhost", port=5000, threaded=True)

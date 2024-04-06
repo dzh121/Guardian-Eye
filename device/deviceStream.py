@@ -10,17 +10,20 @@ import time
 from flask_cors import CORS
 import hashlib
 
+
 class DeviceStream:
     def __init__(self):
         load_dotenv()
-        self.DEVICE_LOCATION = os.getenv('LOCATION')
-        self.DEVICE_ID = os.getenv('DEVICE_ID')
-        self.EMAIL = os.getenv('EMAIL')
-        self.PASSWORD = os.getenv('PASSWORD')
-        self.API_KEY = os.getenv('API_KEY')
-        self.CENTRAL_SERVICE_URL = os.environ.get("CENTRAL_SERVICE_URL", "http://localhost:8080")
+        self.DEVICE_LOCATION = os.getenv("LOCATION")
+        self.DEVICE_ID = os.getenv("DEVICE_ID")
+        self.EMAIL = os.getenv("EMAIL")
+        self.PASSWORD = os.getenv("PASSWORD")
+        self.API_KEY = os.getenv("API_KEY")
+        self.CENTRAL_SERVICE_URL = os.environ.get(
+            "CENTRAL_SERVICE_URL", "http://localhost:8080"
+        )
 
-        cred = credentials.Certificate('./admin.json')
+        cred = credentials.Certificate("./admin.json")
         firebase_admin.initialize_app(cred)
 
         self.camera = self.init_camera()
@@ -32,12 +35,14 @@ class DeviceStream:
         self.setup_routes()
 
     def setup_routes(self):
-        @self.app.route('/video_feed')
+        @self.app.route("/video_feed")
         def video_feed():
-            token = request.args.get('token')
+            token = request.args.get("token")
             if not self.verify_token(token):
-                abort(401, 'Unauthorized access')
-            return Response(self.gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+                abort(401, "Unauthorized access")
+            return Response(
+                self.gen_frames(), mimetype="multipart/x-mixed-replace; boundary=frame"
+            )
 
     def init_camera(self):
         camera = cv2.VideoCapture(0)
@@ -69,24 +74,19 @@ class DeviceStream:
                 success, frame = self.camera.read()
                 if not success:
                     break
-            ret, buffer = cv2.imencode('.jpg', frame)
+            ret, buffer = cv2.imencode(".jpg", frame)
             frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
 
     def authenticate_user(self, email, password):
         url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={self.API_KEY}"
 
-        data = {
-            "email": email,
-            "password": password,
-            "returnSecureToken": True
-        }
+        data = {"email": email, "password": password, "returnSecureToken": True}
 
         response = requests.post(url, json=data)
         if response.status_code == 200:
             user_info = response.json()
-            return user_info['localId'], user_info['idToken']
+            return user_info["localId"], user_info["idToken"]
         else:
             return None, None
 
@@ -98,12 +98,14 @@ class DeviceStream:
             print("Login failed.")
         try:
             registration_info = {
-                'id': self.DEVICE_ID,
-                'loc': self.DEVICE_LOCATION,
-                'url': f'http://localhost:{self.PORT}/video_feed',
-                'user_id': user_id
+                "id": self.DEVICE_ID,
+                "loc": self.DEVICE_LOCATION,
+                "url": f"http://localhost:{self.PORT}/video_feed",
+                "user_id": user_id,
             }
-            response = requests.post(f'{self.CENTRAL_SERVICE_URL}/register', json=registration_info)
+            response = requests.post(
+                f"{self.CENTRAL_SERVICE_URL}/register", json=registration_info
+            )
             print(f"Registration response: {response.status_code}, {response.text}")
         except requests.exceptions.RequestException as e:
             print(f"HTTP Request failed: {e}")
@@ -111,7 +113,9 @@ class DeviceStream:
             print(f"Error registering device: {e}")
 
     def run_server(self, in_background=False):
-        flask_thread = threading.Thread(target=lambda: self.app.run(host='0.0.0.0', port=self.PORT, threaded=True))
+        flask_thread = threading.Thread(
+            target=lambda: self.app.run(host="0.0.0.0", port=self.PORT, threaded=True)
+        )
         flask_thread.start()
         time.sleep(5)
         self.register_device()
@@ -121,6 +125,7 @@ class DeviceStream:
     def get_port(self):
         return self.PORT
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     device_stream = DeviceStream()
     device_stream.run_server()
