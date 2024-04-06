@@ -12,7 +12,7 @@ import hashlib
 
 
 class DeviceStream:
-    def __init__(self):
+    def __init__(self, user_id, id_token):
         load_dotenv()
         self.DEVICE_LOCATION = os.getenv("LOCATION")
         self.DEVICE_ID = os.getenv("DEVICE_ID")
@@ -23,9 +23,8 @@ class DeviceStream:
             "CENTRAL_SERVICE_URL", "http://localhost:8080"
         )
 
-        cred = credentials.Certificate("./admin.json")
-        firebase_admin.initialize_app(cred)
-
+        self.user_id = user_id
+        self.id_token = id_token
         self.camera = self.init_camera()
         self.camera_lock = threading.Lock()
         self.PORT = self.get_port_from_hash(self.hash_device_id(self.DEVICE_ID))
@@ -78,22 +77,9 @@ class DeviceStream:
             frame = buffer.tobytes()
             yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
 
-    def authenticate_user(self, email, password):
-        url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={self.API_KEY}"
-
-        data = {"email": email, "password": password, "returnSecureToken": True}
-
-        response = requests.post(url, json=data)
-        if response.status_code == 200:
-            user_info = response.json()
-            return user_info["localId"], user_info["idToken"]
-        else:
-            return None, None
-
     def register_device(self):
-        user_id, id_token = self.authenticate_user(self.EMAIL, self.PASSWORD)
-        if user_id:
-            print(f"Login successful. User ID: {user_id}")
+        if self.user_id:
+            print(f"Login successful. User ID: {self.user_id}")
         else:
             print("Login failed.")
         try:
@@ -101,7 +87,7 @@ class DeviceStream:
                 "id": self.DEVICE_ID,
                 "loc": self.DEVICE_LOCATION,
                 "url": f"http://localhost:{self.PORT}/video_feed",
-                "user_id": user_id,
+                "user_id": self.user_id,
             }
             response = requests.post(
                 f"{self.CENTRAL_SERVICE_URL}/register", json=registration_info

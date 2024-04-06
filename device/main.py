@@ -12,6 +12,8 @@ import json
 from dotenv import load_dotenv
 import deviceStream
 import requests
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 # Configuration and constants
 ENCODINGS_FILE = "encodings.dat"
@@ -25,6 +27,23 @@ DEVICE_LOCATION = os.getenv("LOCATION")
 DEVICE_ID = os.getenv("DEVICE_ID")
 API_KEY = os.getenv("API_KEY")
 PORT = None
+RECOGNIZE_FACES = False
+recognition_started = False
+
+capture_thread = None
+detection_thread = None
+
+condition = threading.Condition()
+
+
+stop_capture_thread = False
+stop_detection_thread = False
+
+# Firebase Initialization
+if not firebase_admin._apps:
+    cred = credentials.Certificate("./admin.json")
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
 
 
 def load_encodings(filename=ENCODINGS_FILE):
@@ -139,13 +158,12 @@ class BufferManager:
         self.lock = threading.Lock()
 
     def add_frame(self, frame):
-        # print face_detected and buffer length with print stametned
-        print(f"Face Detected: {self.face_detected}")
+        # print(f"Face Detected: {self.face_detected}")
 
         should_save = False
         with self.lock:
             self.buffer.append(frame)
-            print(f"Buffer length: {len(self.buffer)}")
+            # print(f"Buffer length: {len(self.buffer)}")
 
             # If face was detected, check if the buffer size reaches 30 seconds after detection
             if self.face_detected and len(self.buffer) >= self.total_buffer_size:
@@ -177,11 +195,12 @@ class BufferManager:
             filename = f"output_{int(time.time())}.mp4"
             save_buffer_to_file(buffer_copy, filename)
             print(f"Saved video to {filename}")
+            print("sending idToken: " + id_token)
             sf.sendFile(
                 f"./videos/{filename}",
                 DEVICE_ID,
                 DEVICE_LOCATION,
-                authenticate_user(EMAIL, PASSWORD),
+                id_token,
             )
             print(f"Sent video to server")
             self.clear_buffer()
@@ -196,42 +215,32 @@ class BufferManager:
         self.buffer.clear()
 
 
-def authenticate_user(email, password):
-    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
-
-    headers = {"Content-Type": "application/json"}
-
-    data = {"email": email, "password": password, "returnSecureToken": True}
-
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    if response.status_code == 200:
-        return response.json()["idToken"]
-    else:
-        raise Exception("Authentication failed")
-
-
 def frame_capture_thread(video_url, buffer_manager):
-    token = authenticate_user(EMAIL, PASSWORD)
-    video_url += f"?token={token}"
-    with requests.get(video_url, stream=True) as r:
-        print(token)
-        if r.status_code != 200:
-            print(f"Failed to connect to {video_url}, Status code: {r.status_code}")
-            return
+    global stop_capture_thread
+    while not stop_capture_thread:
+        video_url += f"?token={id_token}"
+        with requests.get(video_url, stream=True) as r:
+            if stop_capture_thread:
+                break
+            if r.status_code != 200:
+                print(f"Failed to connect to {video_url}, Status code: {r.status_code}")
+                return
 
-        bytes_buffer = bytes()
-        for chunk in r.iter_content(chunk_size=1024):
-            bytes_buffer += chunk
-            a = bytes_buffer.find(b"\xff\xd8")  # JPEG start
-            b = bytes_buffer.find(b"\xff\xd9")  # JPEG end
-            if a != -1 and b != -1:
-                jpg = bytes_buffer[a : b + 2]
-                bytes_buffer = bytes_buffer[b + 2 :]
-                frame = cv2.imdecode(
-                    np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR
-                )
-                if frame is not None:
-                    buffer_manager.add_frame(frame)
+            bytes_buffer = bytes()
+            for chunk in r.iter_content(chunk_size=1024):
+                bytes_buffer += chunk
+                a = bytes_buffer.find(b"\xff\xd8")  # JPEG start
+                b = bytes_buffer.find(b"\xff\xd9")  # JPEG end
+                if a != -1 and b != -1:
+                    jpg = bytes_buffer[a : b + 2]
+                    bytes_buffer = bytes_buffer[b + 2 :]
+                    frame = cv2.imdecode(
+                        np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR
+                    )
+                    if frame is not None:
+                        if stop_capture_thread:
+                            break
+                        buffer_manager.add_frame(frame)
 
 
 def face_detection_thread(
@@ -242,9 +251,10 @@ def face_detection_thread(
     face_recognition_model,
     n,
 ):
-    frame_counter = 0
 
-    while True:
+    global stop_detection_thread
+    while not stop_detection_thread:
+        frame_counter = 0
         if frame_counter % n == 0 and (not buffer_manager.face_detected):
             frame = buffer_manager.get_next_frame_for_processing()
             if frame is not None:
@@ -264,6 +274,7 @@ def face_detection_thread(
 
 
 def main():
+    global recognition_started
     known_face_encodings = load_encodings()
     face_detector = dlib.get_frontal_face_detector()
     shape_predictor = dlib.shape_predictor(SHAPE_PREDICTOR_FILE)
@@ -276,34 +287,187 @@ def main():
 
     # Set FPS to a fixed value or determine it dynamically
     fps = 30  # This is an example; adjust based on your camera's capability or streaming configuration
-    buffer_manager = BufferManager(fps)
     n = 10  # Process every 10th frame for face detection
 
     video_url = f"http://localhost:{PORT}/video_feed"
-    capture_thread = threading.Thread(
-        target=frame_capture_thread, args=(video_url, buffer_manager)
-    )
-    detection_thread = threading.Thread(
-        target=face_detection_thread,
-        args=(
+
+    # chck ofr initial value of RECOGNIZE_FACES and start threads accordingly
+    if RECOGNIZE_FACES and not recognition_started:
+        print("Starting face recognition")
+        buffer_manager = BufferManager(fps)
+        start_threads(
+            video_url,
             buffer_manager,
             known_face_encodings,
             face_detector,
             shape_predictor,
             face_recognition_model,
             n,
-        ),
-    )
+        )
+        recognition_started = True
 
-    capture_thread.start()
-    detection_thread.start()
+    while True:
+        with condition:
+            condition.wait()  # Wait for notification
+            if RECOGNIZE_FACES and not recognition_started:
+                print("Starting face recognition")
+                buffer_manager = BufferManager(fps)
+                start_threads(
+                    video_url,
+                    buffer_manager,
+                    known_face_encodings,
+                    face_detector,
+                    shape_predictor,
+                    face_recognition_model,
+                    n,
+                )
+                recognition_started = True
+            elif not RECOGNIZE_FACES and recognition_started:
+                print("Stopping face recognition")
+                stop_threads()  # Logic to stop threads
+                recognition_started = False
 
-    capture_thread.join()
-    detection_thread.join()
+    # capture_thread = threading.Thread(
+    #     target=frame_capture_thread, args=(video_url, buffer_manager)
+    # )
+    # detection_thread = threading.Thread(
+    #     target=face_detection_thread,
+    #     args=(
+    #         buffer_manager,
+    #         known_face_encodings,
+    #         face_detector,
+    #         shape_predictor,
+    #         face_recognition_model,
+    #         n,
+    #     ),
+    # )
+    #
+    # capture_thread.start()
+    # detection_thread.start()
+    #
+    # capture_thread.join()
+    # detection_thread.join()
+
+
+def start_threads(
+    video_url,
+    buffer_manager,
+    known_face_encodings,
+    face_detector,
+    shape_predictor,
+    face_recognition_model,
+    n,
+):
+    global capture_thread, detection_thread, stop_capture_thread, stop_detection_thread
+
+    stop_capture_thread = False
+    stop_detection_thread = False
+
+    if capture_thread is None or not capture_thread.is_alive():
+        capture_thread = threading.Thread(
+            target=frame_capture_thread, args=(video_url, buffer_manager)
+        )
+        capture_thread.daemon = True
+        capture_thread.start()
+
+    if detection_thread is None or not detection_thread.is_alive():
+        detection_thread = threading.Thread(
+            target=face_detection_thread,
+            args=(
+                buffer_manager,
+                known_face_encodings,
+                face_detector,
+                shape_predictor,
+                face_recognition_model,
+                n,
+            ),
+        )
+        detection_thread.daemon = True
+        detection_thread.start()
+
+
+def stop_threads():
+    global capture_thread, detection_thread, stop_capture_thread, stop_detection_thread
+
+    print("Stopping threads...")  # Diagnostic print
+    stop_capture_thread = True
+    stop_detection_thread = True
+
+    if capture_thread and capture_thread.is_alive():
+        capture_thread.join(timeout=5)
+        capture_thread = None
+
+    if detection_thread and detection_thread.is_alive():
+        detection_thread.join(timeout=5)
+        detection_thread = None
+
+    print("Threads have been stopped.")
+
+
+def authenticate_user(email, password):
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
+
+    data = {"email": email, "password": password, "returnSecureToken": True}
+
+    response = requests.post(url, json=data)
+    if response.status_code == 200:
+        user_info = response.json()
+        return user_info["localId"], user_info["idToken"]
+    else:
+        return None, None
+
+
+def on_snapshot(doc_snapshot, changes, read_time):
+    global RECOGNIZE_FACES
+    for change in changes:
+        if change.type.name == "MODIFIED":
+            doc = change.document
+            if "recognizeFaces" in doc.to_dict():
+                new_value = doc.get("recognizeFaces")
+                print(f"Recognize Faces changed to: {new_value}")
+                with condition:
+                    RECOGNIZE_FACES = new_value
+                    condition.notify()
+
+
+def get_initial_recognize_faces_value():
+    global RECOGNIZE_FACES
+
+    doc_ref = db.collection("users").document(user_id)
+    try:
+        doc = doc_ref.get()
+        if doc.exists:
+            RECOGNIZE_FACES = doc.get("recognizeFaces")
+            print(f"Initial Recognize Faces value: {RECOGNIZE_FACES}")
+        else:
+            print("Document does not exist.")
+    except Exception as e:
+        print(f"Error getting document: {e}")
+
+
+def setup_firestore_listener(user_id):
+    print(f"Listening for changes to user document: {user_id}")
+    doc_ref = db.collection("users").document(user_id)
+    doc_watch = doc_ref.on_snapshot(on_snapshot)
 
 
 if __name__ == "__main__":
-    device_stream = deviceStream.DeviceStream()
-    PORT = device_stream.get_port()
-    device_stream.run_server(in_background=True)
-    main()
+    global user_id, id_token
+    try:
+        user_id, id_token = authenticate_user(EMAIL, PASSWORD)
+        if user_id is None or id_token is None:
+            raise Exception("Authentication failed")
+
+        get_initial_recognize_faces_value()
+        setup_firestore_listener(user_id)
+
+        device_stream = deviceStream.DeviceStream(user_id, id_token)
+        PORT = device_stream.get_port()
+        device_stream.run_server(in_background=True)
+
+        main_thread = threading.Thread(target=main)
+        main_thread.start()
+        main_thread.join()
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
