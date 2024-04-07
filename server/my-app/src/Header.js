@@ -13,7 +13,7 @@ function Header({ toggleSidebar, isSidebarOpen, isLoggedIn }) {
             <i className="fas fa-bars"></i>
           </button>
         )}
-        <Navbar.Brand href="/">My Application</Navbar.Brand>
+        <Navbar.Brand href="/">Guardian Eye</Navbar.Brand>
       </Container>
     </Navbar>
   );

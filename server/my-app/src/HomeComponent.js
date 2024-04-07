@@ -58,7 +58,6 @@ const HomeComponent = () => {
             src="security-footage.png"
             className="card-image"
           />
-          {/* Placeholder image */}
           <Card.Body>
             <Card.Title>Security Footage Clips</Card.Title>
             <Card.Text>
@@ -69,7 +68,27 @@ const HomeComponent = () => {
             </Button>
           </Card.Body>
         </Card>
-
+        {/* Dashboard Card for familiar faces */}
+        <Card
+          style={{
+            width: "18rem",
+            backgroundColor: theme === "dark" ? "#444" : "#fff",
+          }}
+          className="m-2 card-container text-white"
+        >
+          <Card.Img
+            variant="top"
+            src="familiar-faces.png"
+            className="card-image"
+          />
+          <Card.Body>
+            <Card.Title>Familiar Faces</Card.Title>
+            <Card.Text> Explore and Manage Your Familiar Faces List</Card.Text>
+            <Button variant="primary" href="/familiarFaces">
+              Manage Familiar Faces
+            </Button>
+          </Card.Body>
+        </Card>
         {/* Dashboard Card for Settings */}
         <Card
           style={{

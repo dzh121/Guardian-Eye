@@ -18,6 +18,7 @@ import SecurityFootageComponent from "./SecurityFootageComponent";
 import SettingsComponent from "./SettingsComponent";
 import LoginComponent from "./LoginComponent";
 import RegisterComponent from "./RegisterComponent";
+import FamiliarFacesComponent from "./FamiliarFacesComponent";
 
 // Import styles
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -105,6 +106,10 @@ function App() {
                 element={<SecurityFootageComponent />}
               />
               <Route path="/settings" element={<SettingsComponent />} />
+              <Route
+                path="/familiarFaces"
+                element={<FamiliarFacesComponent />}
+              />
               <Route path="/login" element={<Navigate replace to="/home" />} />
               <Route path="*" element={<Navigate replace to="/home" />} />
             </>

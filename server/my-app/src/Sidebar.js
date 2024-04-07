@@ -6,7 +6,7 @@ const Sidebar = ({ isOpen, isLoggedIn, onLogout }) => {
   return (
     <div className={`sidebar ${isOpen ? "open" : ""}`}>
       <div className="sidebar-header">
-        <h2>MyApp</h2>
+        <h2>Navigation</h2>
       </div>
       <Nav className="flex-column">
         <Nav.Link as={Link} to="/home">
@@ -17,6 +17,9 @@ const Sidebar = ({ isOpen, isLoggedIn, onLogout }) => {
         </Nav.Link>
         <Nav.Link as={Link} to="/SecurityFootage">
           Security Footage
+        </Nav.Link>
+        <Nav.Link as={Link} to="/familiarFaces">
+          Familiar Faces
         </Nav.Link>
         <Nav.Link as={Link} to="/settings">
           Settings
