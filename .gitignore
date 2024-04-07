@@ -7,6 +7,8 @@ device/*$py.class
 # Virtualenv
 venv/
 ENV/
+.idea/
+vscode/
 .env
 admin.json
 ..bfg-report
