@@ -39,6 +39,8 @@ condition = threading.Condition()
 stop_capture_thread = False
 stop_detection_thread = False
 
+MIN_DETECTION_DURATION = 2
+
 # Firebase Initialization
 if not firebase_admin._apps:
     cred = credentials.Certificate("./admin.json")
@@ -251,8 +253,8 @@ def face_detection_thread(
     face_recognition_model,
     n,
 ):
-
     global stop_detection_thread
+    detection_start_time = None
     while not stop_detection_thread:
         frame_counter = 0
         if frame_counter % n == 0 and (not buffer_manager.face_detected):
@@ -266,10 +268,15 @@ def face_detection_thread(
                     face_recognition_model,
                 )
                 face_detected = "Unknown" in face_names
-                buffer_manager.process_detection(face_detected)
-
+                if face_detected:
+                    if detection_start_time is None:
+                        detection_start_time = time.time()
+                    elif time.time() - detection_start_time >= MIN_DETECTION_DURATION:
+                        buffer_manager.process_detection(True)
+                        detection_start_time = None
+                else:
+                    detection_start_time = None
         frame_counter += 1
-        # Implement a short sleep to prevent this loop from consuming too much CPU
         time.sleep(0.01)
 
 
