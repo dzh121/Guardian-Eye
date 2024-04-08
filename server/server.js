@@ -20,7 +20,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, "my-app", "build")));
+app.use(express.static(path.join(__dirname, "client", "build")));
 
 // Token verification middleware
 const verifyToken = require("./utils/verifyToken");
@@ -51,7 +51,7 @@ app.use("/video", verifyToken, require("./utils/serveVideos"));
 
 // Default route for React app
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "my-app", "build", "index.html"));
+  res.sendFile(path.join(__dirname, "client", "build", "index.html"));
 });
 
 // Error handling middleware

@@ -1,5 +1,5 @@
 {
-  "name": "my-app",
+  "name": "client",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -49,5 +49,10 @@
   "overrides": {
     "nth-check": "^2.1.1",
     "postcss": "^8.4.31"
-  }
+  },
+  "main": "index.js",
+  "devDependencies": {},
+  "author": "Dzh121",
+  "license": "MIT",
+  "description": ""
 }
