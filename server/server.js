@@ -5,6 +5,7 @@ const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
 const { admin } = require("./config/firebase");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 const server = http.createServer(app);
@@ -16,15 +17,20 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+
 // Middleware setup
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "client", "build")));
 
+app.use(limiter);
 // Token verification middleware
 const verifyToken = require("./utils/verifyToken");
-const { use } = require("./routes/verifyTokenRoute");
 
 // Routes
 app.get("/protected", verifyToken, (req, res) => {

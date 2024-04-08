@@ -3,6 +3,7 @@
     "axios": "^1.6.7",
     "cors": "^2.8.5",
     "express": "^4.18.3",
+    "express-rate-limit": "^7.2.0",
     "express-session": "^1.18.0",
     "firebase": "^8.6.8",
     "firebase-admin": "^12.0.0",
@@ -20,7 +21,6 @@
   "author": "Dzh121",
   "license": "MIT",
   "description": "Guardian Eye is a web application that allows users to monitor their home security cameras from anywhere in the world.",
-  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dzh121/Guardian-Eye.git"
