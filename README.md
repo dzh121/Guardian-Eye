@@ -1,4 +1,5 @@
 # Guardian-Eye
+![Guardian-Eye App Icon](./appIcon.png)
 ## Overview
 Guardian-Eye is an innovative surveillance system currently under development. It is designed to provide users with a comprehensive monitoring solution for multiple locations. This project is in its initial stages and aims to offer robust features for security and convenience.
 
