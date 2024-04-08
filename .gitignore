@@ -1,14 +1,12 @@
-/device/admin.json
-/device/.env
-device/__pycache__/
+__pycache__
 device/*.py[cod]
 device/*$py.class
 
-# Virtualenv
 venv/
 ENV/
 .idea/
 vscode/
+
 .env
 admin.json
 ..bfg-report
