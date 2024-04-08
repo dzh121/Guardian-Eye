@@ -16,9 +16,10 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 # Configuration and constants
-ENCODINGS_FILE = "encodings.dat"
-SHAPE_PREDICTOR_FILE = "shape_predictor_68_face_landmarks.dat"
-FACE_RECOGNITION_MODEL_FILE = "dlib_face_recognition_resnet_model_v1.dat"
+ENCODINGS_FILE = "../data/encodings.dat"
+SHAPE_PREDICTOR_FILE = "../models/shape_predictor_68_face_landmarks.dat"
+FACE_RECOGNITION_MODEL_FILE = "../models/dlib_face_recognition_resnet_model_v1.dat"
+VIDEO_DIRECTORY = "../videos"
 
 load_dotenv()
 EMAIL = os.getenv("EMAIL")
@@ -43,7 +44,7 @@ MIN_DETECTION_DURATION = 2
 
 # Firebase Initialization
 if not firebase_admin._apps:
-    cred = credentials.Certificate("./admin.json")
+    cred = credentials.Certificate("../data/admin.json")
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
@@ -113,10 +114,9 @@ def save_buffer_to_file(buffer, filename):
     print(f"Frame dimensions: {frame_width}x{frame_height}")  # Debugging line
 
     # Create the output directory if it doesn't exist
-    directory = "./videos"
-    os.makedirs(directory, exist_ok=True)
+    os.makedirs(VIDEO_DIRECTORY, exist_ok=True)
 
-    filepath = os.path.join(directory, filename)
+    filepath = os.path.join(VIDEO_DIRECTORY, filename)
 
     # Using 'XVID' codec
     fourcc = cv2.VideoWriter_fourcc(*"XVID")
@@ -126,7 +126,7 @@ def save_buffer_to_file(buffer, filename):
         out.write(frame)
 
     out.release()
-    re_encode_video(f"./videos/{filename}")
+    re_encode_video(f"{VIDEO_DIRECTORY}/{filename}")
 
 
 def re_encode_video(filepath, bitrate="1860k"):
@@ -199,7 +199,7 @@ class BufferManager:
             print(f"Saved video to {filename}")
             print("sending idToken: " + id_token)
             sf.sendFile(
-                f"./videos/{filename}",
+                f"{VIDEO_DIRECTORY}/{filename}",
                 DEVICE_ID,
                 DEVICE_LOCATION,
                 id_token,
