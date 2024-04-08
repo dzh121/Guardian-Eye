@@ -13,6 +13,8 @@ Guardian-Eye is an innovative surveillance system currently under development. I
 - React for the frontend interface
 - Node.js for server-side operations
 
-Contributing
+## Contributing
 You are welcome to contribute to the Guardian-Eye project.
 
+## License
+This project is licensed under the [MIT License](./LICENSE) - see the LICENSE file for details.
