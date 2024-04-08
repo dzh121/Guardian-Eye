@@ -11,3 +11,4 @@ vscode/
 admin.json
 ..bfg-report
 replacements.txt
+node_modules
