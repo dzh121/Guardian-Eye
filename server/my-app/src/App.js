@@ -8,17 +8,17 @@ import {
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { collection, getDoc, doc } from "firebase/firestore";
 
-import { auth, db } from "./firebase";
-import Header from "./Header";
-import Sidebar from "./Sidebar";
-import Footer from "./Footer";
-import HomeComponent from "./HomeComponent";
-import LiveVideoComponent from "./LiveVideoComponent";
-import SecurityFootageComponent from "./SecurityFootageComponent";
-import SettingsComponent from "./SettingsComponent";
-import LoginComponent from "./LoginComponent";
-import RegisterComponent from "./RegisterComponent";
-import FamiliarFacesComponent from "./FamiliarFacesComponent";
+import { auth, db } from "./utils/firebase";
+import Header from "./components/common/Header";
+import Sidebar from "./components/common/Sidebar";
+import Footer from "./components/common/Footer";
+import HomeComponent from "./components/features/HomeComponent";
+import LiveVideoComponent from "./components/features/LiveVideoComponent";
+import SecurityFootageComponent from "./components/features/SecurityFootageComponent";
+import SettingsComponent from "./components/features/SettingsComponent";
+import LoginComponent from "./components/auth/LoginComponent";
+import RegisterComponent from "./components/auth/RegisterComponent";
+import FamiliarFacesComponent from "./components/features/FamiliarFacesComponent";
 
 // Import styles
 import "bootstrap/dist/css/bootstrap.min.css";

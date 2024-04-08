@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { admin } = require("../firebase");
+const { admin } = require("../config/firebase");
 
 router.post("/", async (req, res) => {
   const { idToken } = req.body;

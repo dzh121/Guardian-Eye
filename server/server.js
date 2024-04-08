@@ -4,7 +4,7 @@ const path = require("path");
 const cors = require("cors");
 const multer = require("multer");
 const fs = require("fs");
-const { admin } = require("./firebase");
+const { admin } = require("./config/firebase");
 
 const app = express();
 const server = http.createServer(app);
@@ -23,7 +23,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "my-app", "build")));
 
 // Token verification middleware
-const verifyToken = require("./verifyToken");
+const verifyToken = require("./utils/verifyToken");
+const { use } = require("./routes/verifyTokenRoute");
 
 // Routes
 app.get("/protected", verifyToken, (req, res) => {
@@ -32,7 +33,7 @@ app.get("/protected", verifyToken, (req, res) => {
 // Verify token route
 app.use("/verify-token", require("./routes/verifyTokenRoute"));
 // File upload setup
-const upload = multer({ storage: require("./fileStorage") });
+const upload = multer({ storage: require("./utils/fileStorage") });
 
 // File upload route
 app.post(
@@ -46,7 +47,7 @@ app.post(
 app.get("/videos", verifyToken, require("./routes/videosRoute"));
 
 // Video serving middleware
-app.use("/video", verifyToken, require("./serveVideos"));
+app.use("/video", verifyToken, require("./utils/serveVideos"));
 
 // Default route for React app
 app.get("*", (req, res) => {

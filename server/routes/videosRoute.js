@@ -1,4 +1,4 @@
-const db = require("../firebase").db;
+const db = require("../config/firebase").db;
 
 module.exports = async (req, res) => {
   const uid = req.user.uid;
