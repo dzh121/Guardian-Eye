@@ -1,7 +1,7 @@
 # Guardian-Eye
 ![Guardian-Eye App Icon](./appIcon.png)
 ## Overview
-Guardian-Eye is an innovative surveillance system currently under development. It is designed to provide users with a comprehensive monitoring solution for multiple locations. This project is in its initial stages and aims to offer robust features for security and convenience.
+Guardian-Eye is an innovative surveillance system currently under development, aimed at providing a comprehensive monitoring solution for various locations. This system is equipped to recognize individuals and is capable of sending a recorded clip to the user when it detects an unknown person. Additionally, Guardian-Eye offers a live feed feature, enabling users to watch real-time footage from their cameras. This combination of individual recognition, alerts, and live surveillance ensures a high level of security and convenience. Currently in its initial stages, the Guardian-Eye project is focused on delivering robust features for effective security management.
 
 ## Features (In Development)
 - Multiple Camera Support: Users can connect multiple cameras scattered across different locations.
