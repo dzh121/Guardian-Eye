@@ -6,7 +6,7 @@ import moment from "moment";
 const FamiliarFacesComponent: React.FC = () => {
   return (
     <Container>
-      <h2 className="text-center">Familiar Faces</h2>
+      <h2 className="text-center font-bold text-large">Familiar Faces</h2>
     </Container>
   );
 };

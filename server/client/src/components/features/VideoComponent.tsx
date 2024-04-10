@@ -125,7 +125,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
       }}
     >
       <CardHeader className="flex gap-3 text-center">
-        <h1>Uploaded Video</h1>
+        <h1 className="font-bold text-large">Uploaded Video</h1>
       </CardHeader>
       <Divider />
       <CardBody

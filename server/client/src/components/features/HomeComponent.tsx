@@ -56,7 +56,7 @@ const HomeComponent: React.FC = () => {
           </CardHeader>
           <Divider />
           <CardBody className="flex flex-col items-center justify-center text-center">
-            <h4>Live Camera Feed</h4>
+            <h4 className="font-bold text-large">Live Camera Feed</h4>
             <p>Watch real-time video from your cameras</p>
           </CardBody>
           <Divider />
@@ -91,7 +91,7 @@ const HomeComponent: React.FC = () => {
           </CardHeader>
           <Divider />
           <CardBody className="flex flex-col items-center justify-center text-center">
-            <h4>Security Footage Clips</h4>
+            <h4 className="font-bold text-large">Security Footage Clips</h4>
             <p>Review the recordings triggered by camera detection</p>
           </CardBody>
           <Divider />
@@ -127,7 +127,7 @@ const HomeComponent: React.FC = () => {
           </CardHeader>
           <Divider />
           <CardBody className="flex flex-col items-center justify-center text-center">
-            <h4>Familiar Faces</h4>
+            <h4 className="font-bold text-large">Familiar Faces</h4>
             <p>Explore and Manage Your Familiar Faces List</p>
           </CardBody>
           <Divider />
@@ -163,7 +163,7 @@ const HomeComponent: React.FC = () => {
           </CardHeader>
           <Divider />
           <CardBody className="flex flex-col items-center justify-center text-center">
-            <h4>Settings</h4>
+            <h4 className="font-bold text-large">Settings</h4>
             <p>Adjust your system settings and preferences</p>
           </CardBody>
           <Divider />

@@ -81,24 +81,41 @@ const SecurityFootageComponent: React.FC = () => {
       </div>
     );
   }
+  const chunkVideos = (videos: Video[], size: number) => {
+    return videos.reduce((acc, val, i) => {
+      let idx = Math.floor(i / size);
+      let page = acc[idx] || (acc[idx] = []);
+      page.push(val);
 
+      return acc;
+    }, [] as Video[][]);
+  };
+
+  const videoRows = chunkVideos(videos, 4);
   return (
     <div>
-      <h2 className="text-center mb-4">Security Footage</h2>
+      <h2 className="text-center mb-4 font-bold text-large">
+        Security Footage
+      </h2>
       {videos.length === 0 ? (
         <p className="text-center">No clips found</p>
       ) : (
-        <div className="flex flex-wrap justify-center gap-3">
-          {videos.map((video, index) => (
-            <Button
-              key={index}
-              onClick={() => handleVideoSelect(video)}
-              color="secondary"
-            >
-              {video.deviceLocation} - {convertTimestamp(video.timeSent)}
-            </Button>
-          ))}
-        </div>
+        videoRows.map((row, rowIndex) => (
+          <div
+            key={rowIndex}
+            className="flex flex-wrap justify-center gap-3 mb-3"
+          >
+            {row.map((video, index) => (
+              <Button
+                key={index}
+                onClick={() => handleVideoSelect(video)}
+                color="secondary"
+              >
+                {video.deviceLocation} - {convertTimestamp(video.timeSent)}
+              </Button>
+            ))}
+          </div>
+        ))
       )}
     </div>
   );
