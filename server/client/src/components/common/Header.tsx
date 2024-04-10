@@ -1,7 +1,18 @@
 import React from "react";
 import { Navbar, Container } from "react-bootstrap";
 
-function Header({ toggleSidebar, isSidebarOpen, isLoggedIn }) {
+// Define an interface for the component props
+interface HeaderProps {
+  toggleSidebar: () => void;
+  isSidebarOpen: boolean;
+  isLoggedIn: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({
+  toggleSidebar,
+  isSidebarOpen,
+  isLoggedIn,
+}) => {
   return (
     <Navbar bg="dark" variant="dark" expand="lg">
       <Container fluid>
@@ -17,6 +28,6 @@ function Header({ toggleSidebar, isSidebarOpen, isLoggedIn }) {
       </Container>
     </Navbar>
   );
-}
+};
 
 export default Header;

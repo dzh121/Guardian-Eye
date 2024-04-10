@@ -19,85 +19,113 @@ import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../utils/firebase";
 import { getAuth } from "firebase/auth";
 
-const SettingsComponent = () => {
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState(""); // Added for user name
-  const [password, setPassword] = useState("");
-  const [notifications, setNotifications] = useState(true);
-  const [recognizeFaces, setRecognizeFaces] = useState(true);
-  const [theme, setTheme] = useState("light");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
+type Camera = {
+  id: string;
+  location: string;
+};
+
+const SettingsComponent: React.FC = () => {
+  const [email, setEmail] = useState<string>("");
+  const [name, setName] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [notifications, setNotifications] = useState<boolean>(true);
+  const [recognizeFaces, setRecognizeFaces] = useState<boolean>(true);
+  const [theme, setTheme] = useState<string>("light");
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
+  const [currentPassword, setCurrentPassword] = useState<string>("");
+  const [cameras, setCameras] = useState<Camera[]>([]);
+
   const user = auth.currentUser;
   const userRef = user ? doc(db, "users", user.uid) : null;
-  const [cameras, setCameras] = useState([]);
 
   useEffect(() => {
     if (user) {
-      getDoc(userRef).then((docSnap) => {
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          console.log("userData", userData);
-          setEmail(userData.email || "");
-          setName(userData.name || "");
-          setNotifications(userData.notifications);
-          setTheme(userData.theme || "light");
-          setRecognizeFaces(userData.recognizeFaces);
-        }
-      });
+      if (userRef) {
+        getDoc(userRef).then((docSnap) => {
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            setEmail(userData.email || "");
+            setName(userData.name || "");
+            setNotifications(userData.notifications);
+            setTheme(userData.theme || "light");
+            setRecognizeFaces(userData.recognizeFaces);
+          }
+        });
+      }
     }
     const fetchCameras = async () => {
       // Replace this with your API call or Firebase call to fetch cameras
-      const token = await getAuth().currentUser.getIdToken();
-      const response = await fetch(
-        `http://localhost:8080/devices?token=${token}`
-      );
+      const currentUser = getAuth().currentUser;
+      if (currentUser) {
+        const token = await currentUser.getIdToken();
 
-      const camerasData = await response.json();
-      setCameras(camerasData);
+        const response = await fetch(
+          `http://localhost:8080/devices?token=${token}`
+        );
+
+        const camerasData = await response.json();
+        setCameras(camerasData);
+      } else {
+        console.log("User not logged in");
+      }
     };
 
     fetchCameras();
   }, []);
 
-  const handleRemoveCamera = async (cameraId) => {
+  const handleRemoveCamera = async (cameraId: string) => {
     try {
-      const token = await auth.currentUser.getIdToken();
-      await fetch(`http://localhost:8080/remove-device?token=${token}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id: cameraId }),
-      });
-      setCameras(cameras.filter((camera) => camera.id !== cameraId));
-      setSuccess("Camera removed successfully!");
+      const currentUser = getAuth().currentUser;
+      if (currentUser) {
+        const token = await currentUser.getIdToken();
+        await fetch(`http://localhost:8080/remove-device?token=${token}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: cameraId }),
+        });
+        setCameras(cameras.filter((camera) => camera.id !== cameraId));
+        setSuccess("Camera removed successfully!");
+      } else {
+        setError("User not logged in");
+      }
     } catch (error) {
       setError("Error removing camera");
     }
   };
-  const handleChange = (setState) => (event) => {
-    setState(event.target.value);
-    setSuccess("");
-  };
+  const handleChange =
+    (setState: React.Dispatch<React.SetStateAction<string>>) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setState(event.target.value);
+      setSuccess("");
+    };
 
   const handleEmailChange = handleChange(setEmail);
   const handlePasswordChange = handleChange(setPassword);
   const handleCurrentPasswordChange = handleChange(setCurrentPassword);
   const handleNameChange = handleChange(setName);
-  const handleNotificationsChange = (e) => {
+  const handleNotificationsChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     setNotifications(e.target.checked);
     setSuccess("");
   };
-  const handleRecognizeFaces = (e) => {
+
+  const handleRecognizeFaces = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRecognizeFaces(e.target.checked);
     setSuccess("");
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
+
+    if (userRef === null) {
+      setError("User not found");
+      return;
+    }
 
     // Password length validation
     if (password && password.length < 6) {
@@ -106,7 +134,7 @@ const SettingsComponent = () => {
     }
 
     try {
-      if (currentPassword) {
+      if (currentPassword && user.email) {
         const credential = EmailAuthProvider.credential(
           user.email,
           currentPassword
@@ -138,7 +166,7 @@ const SettingsComponent = () => {
       setError("");
       setPassword("");
       setCurrentPassword("");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating settings:", error);
       setError(error.message || "An error occurred");
       setSuccess("");

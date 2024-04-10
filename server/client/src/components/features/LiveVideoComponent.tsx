@@ -3,13 +3,19 @@ import { getAuth } from "firebase/auth";
 import { Button, Container, Row, Col, Alert } from "react-bootstrap";
 import moment from "moment";
 
-const LiveVideoComponent = () => {
-  const [devices, setDevices] = useState([]);
-  const [selectedDevice, setSelectedDevice] = useState(null);
-  const [videoUrl, setVideoUrl] = useState("");
-  const [isCameraOnline, setIsCameraOnline] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentTime, setCurrentTime] = useState(
+type Device = {
+  id: string;
+  location: string;
+  url: string;
+};
+
+const LiveVideoComponent: React.FC = () => {
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string>("");
+  const [isCameraOnline, setIsCameraOnline] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<string>(
     moment().format("DD/MM/YYYY, HH:mm:ss")
   );
 
@@ -26,13 +32,18 @@ const LiveVideoComponent = () => {
   useEffect(() => {
     const fetchDevices = async () => {
       setIsLoading(true);
-      const token = await getAuth().currentUser.getIdToken();
-      const response = await fetch(
-        `http://localhost:8080/devices?token=${token}`
-      );
-      const data = await response.json();
-      setDevices(data);
-      setIsLoading(false);
+      const currentUser = getAuth().currentUser;
+      if (currentUser) {
+        const token = await currentUser.getIdToken();
+        const response = await fetch(
+          `http://localhost:8080/devices?token=${token}`
+        );
+        const data = await response.json();
+        setDevices(data);
+        setIsLoading(false);
+      } else {
+        console.log("User not logged in");
+      }
     };
     fetchDevices();
   }, []);
@@ -43,16 +54,22 @@ const LiveVideoComponent = () => {
       if (selectedDevice) {
         setIsLoading(true);
         try {
-          const token = await getAuth().currentUser.getIdToken();
-          const deviceUrlWithToken = `${selectedDevice.url}?token=${token}`;
+          const currentUser = getAuth().currentUser;
+          if (currentUser) {
+            const token = await currentUser.getIdToken();
 
-          // Check if the camera server is reachable
-          const response = await fetch(deviceUrlWithToken);
-          if (response.ok) {
-            setVideoUrl(deviceUrlWithToken);
-            setIsCameraOnline(true);
+            const deviceUrlWithToken = `${selectedDevice.url}?token=${token}`;
+
+            // Check if the camera server is reachable
+            const response = await fetch(deviceUrlWithToken);
+            if (response.ok) {
+              setVideoUrl(deviceUrlWithToken);
+              setIsCameraOnline(true);
+            } else {
+              throw new Error("Camera server not reachable");
+            }
           } else {
-            throw new Error("Camera server not reachable");
+            throw new Error("User not logged in");
           }
         } catch (error) {
           console.error("Error checking camera status:", error);
@@ -66,7 +83,7 @@ const LiveVideoComponent = () => {
   }, [selectedDevice]);
 
   // Handling device selection
-  const handleDeviceSelection = (device) => {
+  const handleDeviceSelection = (device: Device) => {
     setSelectedDevice(device);
   };
 
@@ -98,7 +115,7 @@ const LiveVideoComponent = () => {
               <Button
                 onClick={() => handleDeviceSelection(device)}
                 variant="secondary"
-                block
+                // block
               >
                 {device.id} - {device.location}
               </Button>

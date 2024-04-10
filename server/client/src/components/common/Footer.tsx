@@ -1,11 +1,11 @@
 import React from "react";
 
-function Footer() {
+const Footer: React.FC = () => {
   return (
-    <div class="footer">
+    <div className="footer">
       <p>&copy; {new Date().getFullYear()} Guardian Eye</p>
     </div>
   );
-}
+};
 
 export default Footer;

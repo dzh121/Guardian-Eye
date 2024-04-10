@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Card, Button } from "react-bootstrap";
 
-const HomeComponent = () => {
-  const [theme, setTheme] = useState("light");
+const HomeComponent: React.FC = () => {
+  const [theme, setTheme] = useState<string>("light");
 
   useEffect(() => {
     // Listen for theme changes and update the component
@@ -13,6 +13,7 @@ const HomeComponent = () => {
 
     handleThemeChange(); // Initial theme setup
 
+    // Assume "themeChange" is a custom event you've defined elsewhere
     window.addEventListener("themeChange", handleThemeChange);
 
     return () => {

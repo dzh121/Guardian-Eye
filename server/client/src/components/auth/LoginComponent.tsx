@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, FormEvent } from "react";
 import { Form, Button, Card, Container, Alert } from "react-bootstrap";
 import {
   getAuth,
@@ -7,16 +7,20 @@ import {
 } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
-function LoginComponent() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [resetPassword, setResetPassword] = useState(false);
+interface LoginComponentProps {
+  onLogin: (status: boolean) => void;
+}
+
+const LoginComponent: React.FC<LoginComponentProps> = ({ onLogin }) => {
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [resetPassword, setResetPassword] = useState<boolean>(false);
 
   const auth = getAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (event) => {
+  const handleLogin = (event: FormEvent) => {
     event.preventDefault();
     setResetPassword(false); // Reset password state
     setError(""); // Clear any existing errors
@@ -107,6 +111,6 @@ function LoginComponent() {
       </Card>
     </Container>
   );
-}
+};
 
 export default LoginComponent;

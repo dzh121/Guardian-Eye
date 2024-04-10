@@ -3,10 +3,17 @@ import { getAuth } from "firebase/auth";
 import VideoComponent from "./VideoComponent";
 import { Button, Container, Row, Col } from "react-bootstrap";
 
-const SecurityFootageComponent = () => {
-  const [videos, setVideos] = useState([]);
-  const [selectedVideo, setSelectedVideo] = useState(null);
-  const [fetchingClips, setFetchingClips] = useState(true);
+type Video = {
+  deviceLocation: string;
+  timeSent: { _seconds: number };
+  fileName: string;
+};
+
+const SecurityFootageComponent: React.FC = () => {
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+
+  const [fetchingClips, setFetchingClips] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchUserToken = async () => {
@@ -42,7 +49,7 @@ const SecurityFootageComponent = () => {
     fetchVideos();
   }, []);
 
-  const handleVideoSelect = (video) => {
+  const handleVideoSelect = (video: Video) => {
     setSelectedVideo(video);
   };
 
@@ -50,7 +57,7 @@ const SecurityFootageComponent = () => {
     setSelectedVideo(null);
   };
 
-  const convertTimestamp = (timestamp) => {
+  const convertTimestamp = (timestamp: { _seconds: number }): string => {
     if (timestamp && timestamp._seconds) {
       const date = new Date(timestamp._seconds * 1000);
       const day = date.getDate().toString().padStart(2, "0");
@@ -89,7 +96,7 @@ const SecurityFootageComponent = () => {
               <Button
                 onClick={() => handleVideoSelect(video)}
                 variant="secondary"
-                block
+                //block
               >
                 {video.deviceLocation} - {convertTimestamp(video.timeSent)}
               </Button>

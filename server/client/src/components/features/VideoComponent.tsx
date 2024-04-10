@@ -2,13 +2,31 @@ import React, { useState, useEffect } from "react";
 import { Card, Button } from "react-bootstrap";
 import { getAuth } from "firebase/auth";
 
-const VideoComponent = ({ videoFilename, onGoBack }) => {
-  const [videoStream, setVideoStream] = useState(null);
-  const [videoDetails, setVideoDetails] = useState({
+// Define types for props and state
+type VideoComponentProps = {
+  videoFilename: {
+    deviceLocation: string;
+    timeSent: { _seconds: number };
+    fileName: string; // Assuming this is the structure based on usage
+  };
+  onGoBack: () => void;
+};
+
+type VideoDetails = {
+  location: string;
+  timestamp: { _seconds: number } | "";
+};
+
+const VideoComponent: React.FC<VideoComponentProps> = ({
+  videoFilename,
+  onGoBack,
+}) => {
+  const [videoStream, setVideoStream] = useState<string | null>(null);
+  const [videoDetails, setVideoDetails] = useState<VideoDetails>({
     location: "",
     timestamp: "",
   });
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState<string>("light");
 
   useEffect(() => {
     const handleThemeChange = () => {
@@ -20,7 +38,7 @@ const VideoComponent = ({ videoFilename, onGoBack }) => {
 
     window.addEventListener("themeChange", handleThemeChange);
 
-    let videoObjectUrl;
+    let videoObjectUrl: string | null = null;
 
     const fetchUserToken = async () => {
       const user = getAuth().currentUser;
@@ -35,7 +53,7 @@ const VideoComponent = ({ videoFilename, onGoBack }) => {
       }
     };
 
-    const fetchVideoStream = async (idToken, filename) => {
+    const fetchVideoStream = async (idToken: string, filename: string) => {
       console.log("Fetching video stream for:", filename);
       const response = await fetch(`/video/${filename}`, {
         method: "GET",
@@ -74,8 +92,10 @@ const VideoComponent = ({ videoFilename, onGoBack }) => {
     };
   }, [videoFilename]);
 
-  const convertFirestoreTimestampToDate = (timestamp) => {
-    if (timestamp && timestamp._seconds) {
+  const convertFirestoreTimestampToDate = (
+    timestamp: { _seconds: number } | ""
+  ): string => {
+    if (timestamp && typeof timestamp !== "string") {
       const date = new Date(timestamp._seconds * 1000);
       const day = date.getDate().toString().padStart(2, "0");
       const month = (date.getMonth() + 1).toString().padStart(2, "0");

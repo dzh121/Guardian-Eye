@@ -3,7 +3,7 @@ import { getAuth } from "firebase/auth";
 import { Button, Container, Row, Col, Alert } from "react-bootstrap";
 import moment from "moment";
 
-const FamiliarFacesComponent = () => {
+const FamiliarFacesComponent: React.FC = () => {
   return (
     <Container>
       <h2 className="text-center">Familiar Faces</h2>

@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "es5",                         // Specify ECMAScript target version
+    "lib": ["dom", "dom.iterable", "esnext"], // Specify a list of library files to be included in the compilation
+    "allowJs": true,                         // Allow JavaScript files to be compiled
+    "skipLibCheck": true,                    // Skip type checking of declaration files
+    "esModuleInterop": true,                 // Enables compatibility with CommonJS modules for the default imports
+    "allowSyntheticDefaultImports": true,    // Allow default imports from modules with no default export
+    "strict": true,                          // Enable all strict type checking options
+    "forceConsistentCasingInFileNames": true,// Disallow inconsistently-cased references to the same file
+    "module": "esnext",                      // Specify module code generation
+    "moduleResolution": "node",              // Select module resolution strategy
+    "resolveJsonModule": true,               // Include modules imported with .json extension
+    "isolatedModules": true,                 // Perform additional checks to ensure each file can be safely transpiled without relying on other imports
+    "noEmit": true,                          // Do not emit outputs
+    "jsx": "react-jsx"                       // Specify JSX code generation
+  },
+  "include": [
+    "src/**/*" // Include all files in the src directory
+  ],
+  "exclude": [
+    "node_modules", // Exclude the node_modules directory
+    "**/*.spec.ts", // Exclude test files
+    "**/*.test.ts"
+  ]
+}

@@ -1,17 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, FormEvent } from "react";
 import { Form, Button, Alert, Card, Container } from "react-bootstrap";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
-function Register() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [error, setError] = useState("");
+const Register: React.FC = () => {
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [name, setName] = useState<string>("");
+  const [error, setError] = useState<string>("");
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const auth = getAuth();
     const db = getFirestore();
@@ -33,14 +33,15 @@ function Register() {
         theme: "light",
       });
 
-      // Redirect or do something upon successful registration
-    } catch (error) {
+    } catch (error: any) {
       setError(error.message);
     }
   };
+
   const navigateToLogin = () => {
     navigate("/login");
   };
+
   return (
     <Container
       className="d-flex align-items-center justify-content-center"
@@ -92,6 +93,6 @@ function Register() {
       </Card>
     </Container>
   );
-}
+};
 
 export default Register;
