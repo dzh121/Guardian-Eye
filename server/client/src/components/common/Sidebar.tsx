@@ -1,34 +1,77 @@
 import React from "react";
-import { Nav } from "react-bootstrap";
+import {
+  Navbar,
+  NavbarBrand,
+  NavbarMenuToggle,
+  NavbarMenuItem,
+  NavbarMenu,
+  NavbarContent,
+  Button,
+} from "@nextui-org/react";
 import { Link } from "react-router-dom";
 
-// Define a type for the props
-type SidebarProps = {
-  isOpen: boolean;
+type NavbarProps = {
+  isMenuOpen: boolean;
+  toggleMenu: () => void;
   isLoggedIn: boolean;
-  onLogout: () => void; // assuming onLogout is a function that takes no arguments and returns nothing
+  onLogout: () => void;
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, isLoggedIn, onLogout }) => {
+const Sidebar: React.FC<NavbarProps> = ({
+  isMenuOpen,
+  toggleMenu,
+  isLoggedIn,
+  onLogout,
+}) => {
   return (
-    <div className={`sidebar ${isOpen ? "open" : ""}`}>
-      <div className="sidebar-header">
-        <h2>Navigation</h2>
-      </div>
-      <Nav className="flex-column">
-        <Nav.Link as={Link} to="/home">Home</Nav.Link>
-        <Nav.Link as={Link} to="/livefeed">Live Feed</Nav.Link>
-        <Nav.Link as={Link} to="/SecurityFootage">Security Footage</Nav.Link>
-        <Nav.Link as={Link} to="/familiarFaces">Familiar Faces</Nav.Link>
-        <Nav.Link as={Link} to="/settings">Settings</Nav.Link>
+    <Navbar isBordered isMenuOpen={isMenuOpen} onMenuOpenChange={toggleMenu}>
+      <NavbarContent className="sm:hidden" justify="start">
+        <NavbarMenuToggle
+          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          onClick={toggleMenu}
+        />
+      </NavbarContent>
+
+      <NavbarContent className="sm:hidden pr-3" justify="center">
+        <NavbarBrand>
+          <p className="font-bold text-inherit">ACME</p>
+        </NavbarBrand>
+      </NavbarContent>
+
+      <NavbarMenu>
+        <NavbarMenuItem>
+          <Link className="w-full" to="/home">
+            Home
+          </Link>
+        </NavbarMenuItem>
+        <NavbarMenuItem>
+          <Link className="w-full" to="/livefeed">
+            Live Feed
+          </Link>
+        </NavbarMenuItem>
+        <NavbarMenuItem>
+          <Link className="w-full" to="/SecurityFootage">
+            Security Footage
+          </Link>
+        </NavbarMenuItem>
+        <NavbarMenuItem>
+          <Link className="w-full" to="/familiarFaces">
+            Familiar Faces
+          </Link>
+        </NavbarMenuItem>
+        <NavbarMenuItem>
+          <Link className="w-full" to="/settings">
+            Settings
+          </Link>
+        </NavbarMenuItem>
         {isLoggedIn && (
-          <div className="sidebar-footer">
-            <Nav.Link onClick={onLogout}>Logout</Nav.Link>
-          </div>
+          <NavbarMenuItem>
+            <Button className="w-full" color="warning" onClick={onLogout}>
+              Log Out
+            </Button>
+          </NavbarMenuItem>
         )}
-      </Nav>
-    </div>
+      </NavbarMenu>
+    </Navbar>
   );
 };
-
-export default Sidebar;

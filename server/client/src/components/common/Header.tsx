@@ -1,32 +1,144 @@
 import React from "react";
-import { Navbar, Container } from "react-bootstrap";
+import { useLocation } from "react-router-dom";
+import {
+  Navbar,
+  NavbarBrand,
+  NavbarMenuToggle,
+  NavbarMenuItem,
+  NavbarMenu,
+  NavbarContent,
+  NavbarItem,
+  Link,
+  Button,
+} from "@nextui-org/react";
 
-// Define an interface for the component props
 interface HeaderProps {
-  toggleSidebar: () => void;
-  isSidebarOpen: boolean;
   isLoggedIn: boolean;
+  handleLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({
-  toggleSidebar,
-  isSidebarOpen,
-  isLoggedIn,
-}) => {
+const Header: React.FC<HeaderProps> = ({ isLoggedIn, handleLogout }) => {
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const currentLocation = useLocation();
+  const menuItems = [
+    { label: "Home", path: "/home" },
+    { label: "Live Feed", path: "/liveFeed" },
+    { label: "Security Footage", path: "/SecurityFootage" },
+    { label: "Familiar Faces", path: "/familiarFaces" },
+    { label: "Settings", path: "/settings" },
+  ];
+
   return (
-    <Navbar bg="dark" variant="dark" expand="lg">
-      <Container fluid>
-        {isLoggedIn && (
-          <button
-            onClick={toggleSidebar}
-            className={`menu-toggle ${isSidebarOpen ? "shifted" : ""}`}
+    <div className="header">
+      <Navbar isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen}>
+        <NavbarContent className="hidden sm:flex gap-4" justify="center">
+          <NavbarBrand>
+            <p className="font-bold text-inherit">Guardian Eye</p>
+          </NavbarBrand>
+          {isLoggedIn &&
+            menuItems.map((item, index) => (
+              <NavbarItem
+                key={index}
+                isActive={currentLocation.pathname === item.path}
+              >
+                <Link color="foreground" href={item.path}>
+                  {item.label}
+                </Link>
+              </NavbarItem>
+            ))}
+          {!isMenuOpen && isLoggedIn && (
+            <NavbarItem>
+              <Button
+                as={Link}
+                color="danger"
+                href="#"
+                variant="flat"
+                onClick={handleLogout}
+              >
+                Log Out
+              </Button>
+            </NavbarItem>
+          )}
+        </NavbarContent>
+
+        <NavbarMenu>
+          {isLoggedIn &&
+            menuItems.map((item, index) => (
+              <NavbarMenuItem
+                key={index}
+                isActive={currentLocation.pathname === item.path}
+              >
+                <Link color="foreground" href={item.path}>
+                  {item.label}
+                </Link>
+              </NavbarMenuItem>
+            ))}
+          {isMenuOpen && isLoggedIn && (
+            <NavbarMenuItem>
+              <Button
+                as={Link}
+                color="danger"
+                href="#"
+                variant="flat"
+                onClick={handleLogout}
+              >
+                Log Out
+              </Button>
+            </NavbarMenuItem>
+          )}
+          {!isLoggedIn && (
+            <>
+              <NavbarMenuItem>
+                <Button
+                  as={Link}
+                  color="warning"
+                  href="/register"
+                  variant="flat"
+                >
+                  Register
+                </Button>
+              </NavbarMenuItem>
+              <NavbarMenuItem>
+                <Button as={Link} color="warning" href="/login" variant="flat">
+                  Log In
+                </Button>
+              </NavbarMenuItem>
+            </>
+          )}
+        </NavbarMenu>
+
+        {/* <NavbarContent justify="end">
+        <NavbarItem>
+          <Button
+            as={Link}
+            color="warning"
+            href="/register"
+            variant="flat"
+            disabled={isMenuOpen}
           >
-            <i className="fas fa-bars"></i>
-          </button>
-        )}
-        <Navbar.Brand href="/">Guardian Eye</Navbar.Brand>
-      </Container>
-    </Navbar>
+            Register
+          </Button>
+        </NavbarItem>
+        <NavbarItem>
+          <Button
+            as={Link}
+            color="warning"
+            href="/login"
+            variant="flat"
+            disabled={isMenuOpen}
+          >
+            Log In
+          </Button>
+        </NavbarItem>
+      </NavbarContent> */}
+
+        <NavbarContent className="sm:hidden" justify="start">
+          <NavbarMenuToggle
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          />
+        </NavbarContent>
+      </Navbar>
+    </div>
   );
 };
 

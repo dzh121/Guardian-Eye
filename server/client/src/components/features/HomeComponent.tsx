@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Card, Button } from "react-bootstrap";
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  Divider,
+  Link,
+  Image,
+  Button,
+} from "@nextui-org/react";
 
 const HomeComponent: React.FC = () => {
   const [theme, setTheme] = useState<string>("light");
@@ -7,7 +16,7 @@ const HomeComponent: React.FC = () => {
   useEffect(() => {
     // Listen for theme changes and update the component
     const handleThemeChange = () => {
-      const isDarkTheme = document.body.classList.contains("darkTheme");
+      const isDarkTheme = document.body.classList.contains("dark");
       setTheme(isDarkTheme ? "dark" : "light");
     };
 
@@ -30,83 +39,145 @@ const HomeComponent: React.FC = () => {
       <div className="d-flex flex-wrap justify-content-center">
         {/* Dashboard Card for Live Feed */}
         <Card
+          className="max-w-[330px]"
           style={{
-            width: "18rem",
-            backgroundColor: theme === "dark" ? "#444" : "#fff",
+            margin: "10px",
           }}
-          className="m-2 card-container text-white"
         >
-          <Card.Img variant="top" src="live-feed.png" className="card-image" />
-          <Card.Body>
-            <Card.Title>Live Camera Feed</Card.Title>
-            <Card.Text>Watch real-time video from your cameras.</Card.Text>
-            <Button variant="primary" href="/LiveFeed">
+          <CardHeader className="flex gap-3">
+            <Image
+              src="live-feed.png"
+              className="object-cover rounded-xl opacity-100"
+              radius="sm"
+              width="100%"
+              height={140}
+              alt="Live Feed"
+            />
+          </CardHeader>
+          <Divider />
+          <CardBody className="flex flex-col items-center justify-center text-center">
+            <h4>Live Camera Feed</h4>
+            <p>Watch real-time video from your cameras</p>
+          </CardBody>
+          <Divider />
+          <CardFooter className="flex items-center justify-center">
+            <Button
+              href="/LiveFeed"
+              as={Link}
+              color="primary"
+              showAnchorIcon
+              variant="solid"
+            >
               Go to Live Feed
             </Button>
-          </Card.Body>
+          </CardFooter>
         </Card>
-
         {/* Dashboard Card for Camera Detection */}
         <Card
+          className="max-w-[330px]"
           style={{
-            width: "18rem",
-            backgroundColor: theme === "dark" ? "#444" : "#fff",
+            margin: "10px",
           }}
-          className="m-2 card-container text-white"
         >
-          <Card.Img
-            variant="top"
-            src="security-footage.png"
-            className="card-image"
-          />
-          <Card.Body>
-            <Card.Title>Security Footage Clips</Card.Title>
-            <Card.Text>
-              Review the recordings triggered by camera detection.
-            </Card.Text>
-            <Button variant="primary" href="/SecurityFootage">
+          <CardHeader className="flex gap-3">
+            <Image
+              src="security-footage.png"
+              className="object-cover rounded-xl opacity-100"
+              radius="sm"
+              width="100%"
+              height={140}
+              alt="Security footage"
+            />
+          </CardHeader>
+          <Divider />
+          <CardBody className="flex flex-col items-center justify-center text-center">
+            <h4>Security Footage Clips</h4>
+            <p>Review the recordings triggered by camera detection</p>
+          </CardBody>
+          <Divider />
+          <CardFooter className="flex items-center justify-center">
+            <Button
+              href="/SecurityFootage"
+              as={Link}
+              color="primary"
+              showAnchorIcon
+              variant="solid"
+            >
               View Clips
             </Button>
-          </Card.Body>
+          </CardFooter>
         </Card>
+
         {/* Dashboard Card for familiar faces */}
         <Card
+          className="max-w-[330px]"
           style={{
-            width: "18rem",
-            backgroundColor: theme === "dark" ? "#444" : "#fff",
+            margin: "10px",
           }}
-          className="m-2 card-container text-white"
         >
-          <Card.Img
-            variant="top"
-            src="familiar-faces.png"
-            className="card-image"
-          />
-          <Card.Body>
-            <Card.Title>Familiar Faces</Card.Title>
-            <Card.Text> Explore and Manage Your Familiar Faces List</Card.Text>
-            <Button variant="primary" href="/familiarFaces">
+          <CardHeader className="flex gap-3">
+            <Image
+              src="familiar-faces.png"
+              className="object-cover rounded-xl opacity-100"
+              radius="sm"
+              width="100%"
+              height={140}
+              alt="familiar faces"
+            />
+          </CardHeader>
+          <Divider />
+          <CardBody className="flex flex-col items-center justify-center text-center">
+            <h4>Familiar Faces</h4>
+            <p>Explore and Manage Your Familiar Faces List</p>
+          </CardBody>
+          <Divider />
+          <CardFooter className="flex items-center justify-center">
+            <Button
+              href="/familiarFaces"
+              as={Link}
+              color="primary"
+              showAnchorIcon
+              variant="solid"
+            >
               Manage Familiar Faces
             </Button>
-          </Card.Body>
+          </CardFooter>
         </Card>
+
         {/* Dashboard Card for Settings */}
         <Card
+          className="max-w-[330px]"
           style={{
-            width: "18rem",
-            backgroundColor: theme === "dark" ? "#444" : "#fff",
+            margin: "10px",
           }}
-          className="m-2 card-container text-white"
         >
-          <Card.Img variant="top" src="settings.png" className="card-image" />
-          {/* Placeholder image */}
-          <Card.Body>
-            <Card.Title>Settings</Card.Title>
-            <Card.Text>Adjust your system settings and preferences.</Card.Text>
-            <Button variant="primary" href="/settings">
+          <CardHeader className="flex gap-3">
+            <Image
+              src="settings.png"
+              className="object-cover rounded-xl opacity-100"
+              radius="sm"
+              width="100%"
+              height={140}
+              alt="Settings"
+            />
+          </CardHeader>
+          <Divider />
+          <CardBody className="flex flex-col items-center justify-center text-center">
+            <h4>Settings</h4>
+            <p>Adjust your system settings and preferences</p>
+          </CardBody>
+          <Divider />
+          <CardFooter className="flex items-center justify-center">
+            <Button
+              href="/settings"
+              as={Link}
+              color="primary"
+              showAnchorIcon
+              variant="solid"
+            >
               Go to Settings
             </Button>
-          </Card.Body>
+          </CardFooter>
         </Card>
       </div>
     </div>

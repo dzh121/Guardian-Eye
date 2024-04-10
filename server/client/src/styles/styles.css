@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --background-color-light: #2f4f4f;
   --text-color-light: #333333;
@@ -138,11 +142,10 @@ code {
 
 .footer {
   background-color: #2f4f4f;
+  margin-top: auto;
   color: white;
   padding: 1rem;
   text-align: center;
-  position: fixed;
-  bottom: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -157,9 +160,9 @@ code {
   text-align: center;
   font-family: 'Roboto', sans-serif;
   padding: 1rem;
-  background-color: var(--main-bg-color); 
-  color: var(--main-text-color); 
-  min-height: 80vh;
+  /* background-color: var(--main-bg-color); 
+  color: var(--main-text-color);  */
+  min-height: 90vh;
 }
 
 .main-content:not(.shifted) {

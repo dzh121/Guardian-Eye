@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Card, Button } from "react-bootstrap";
+// import { Card, Button } from "react-bootstrap";
 import { getAuth } from "firebase/auth";
-
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  Divider,
+  Link,
+  Image,
+  Button,
+} from "@nextui-org/react";
 // Define types for props and state
 type VideoComponentProps = {
   videoFilename: {
@@ -30,7 +39,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
   useEffect(() => {
     const handleThemeChange = () => {
-      const isDarkTheme = document.body.classList.contains("darkTheme");
+      const isDarkTheme = document.body.classList.contains("dark");
       setTheme(isDarkTheme ? "dark" : "light");
     };
 
@@ -112,29 +121,32 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   return (
     <Card
       style={{
-        backgroundColor: theme === "dark" ? "#444" : "#fff",
         marginBottom: "120px",
       }}
     >
-      <Card.Body
+      <CardHeader className="flex gap-3 text-center">
+        <h1>Uploaded Video</h1>
+      </CardHeader>
+      <Divider />
+      <CardBody
         style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
         }}
       >
-        <Card.Title>Uploaded Video</Card.Title>
         {videoDetails.location && (
-          <Card.Text>
+          <p>
             <b>Location:</b> {videoDetails.location}
-          </Card.Text>
+          </p>
         )}
         {videoDetails.timestamp && (
-          <Card.Text>
+          <p>
             <b>Time Sent:</b>{" "}
             {convertFirestoreTimestampToDate(videoDetails.timestamp)}
-          </Card.Text>
+          </p>
         )}
+        <Divider />
         <video key={videoStream} width="88%" height="auto" controls>
           {videoStream ? (
             <source src={videoStream} type="video/mp4" />
@@ -142,14 +154,15 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             "Loading video..."
           )}
         </video>
+        <Divider />
         <Button
           onClick={onGoBack}
           style={{ marginTop: "10px" }}
-          variant="primary"
+          color="primary"
         >
           Go Back
         </Button>
-      </Card.Body>
+      </CardBody>
     </Card>
   );
 };

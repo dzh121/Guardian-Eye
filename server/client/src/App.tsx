@@ -10,7 +10,7 @@ import { collection, getDoc, doc, DocumentData } from "firebase/firestore";
 
 import { auth, db } from "./utils/firebase";
 import Header from "./components/common/Header";
-import Sidebar from "./components/common/Sidebar";
+// import Sidebar from "./components/common/Sidebar";
 import Footer from "./components/common/Footer";
 import HomeComponent from "./components/features/HomeComponent";
 import LiveVideoComponent from "./components/features/LiveVideoComponent";
@@ -45,10 +45,10 @@ const App: React.FC = () => {
         if (userData.exists()) {
           const userDataObj: DocumentData | undefined = userData.data();
           if (userDataObj?.theme === "dark") {
-            document.body.classList.add("darkTheme");
+            document.body.classList.add("dark");
             setDarkTheme(true);
           } else {
-            document.body.classList.remove("darkTheme");
+            document.body.classList.remove("dark");
             setDarkTheme(false);
           }
         }
@@ -83,18 +83,8 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <Header
-        isSidebarOpen={isSidebarOpen}
-        toggleSidebar={toggleSidebar}
-        isLoggedIn={isLoggedIn}
-      />
-      {isLoggedIn ? (
-        <Sidebar
-          isOpen={isSidebarOpen}
-          isLoggedIn={isLoggedIn}
-          onLogout={handleLogout}
-        />
-      ) : null}
+      <Header handleLogout={handleLogout} isLoggedIn={isLoggedIn} />
+      {isLoggedIn ? <p></p> : null}
       <div className={`main-content ${isSidebarOpen ? "shifted" : ""}`}>
         <Routes>
           {isLoggedIn ? (
@@ -128,6 +118,6 @@ const App: React.FC = () => {
       <Footer />
     </Router>
   );
-}
+};
 
 export default App;

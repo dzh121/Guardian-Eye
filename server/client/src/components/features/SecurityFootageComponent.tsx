@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
 import VideoComponent from "./VideoComponent";
-import { Button, Container, Row, Col } from "react-bootstrap";
+import { Button } from "@nextui-org/react";
 
 type Video = {
   deviceLocation: string;
@@ -12,7 +12,6 @@ type Video = {
 const SecurityFootageComponent: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
-
   const [fetchingClips, setFetchingClips] = useState<boolean>(true);
 
   useEffect(() => {
@@ -38,11 +37,10 @@ const SecurityFootageComponent: React.FC = () => {
 
         const data = await response.json();
         setVideos(data.videos);
-        setFetchingClips(false); // Set fetchingClips to false once clips are fetched
+        setFetchingClips(false);
       } catch (error) {
         console.error("Error fetching videos: ", error);
-        setFetchingClips(false); // Set fetchingClips to false in case of error too
-        // Optionally, set an error state and display it in the UI
+        setFetchingClips(false);
       }
     };
 
@@ -85,26 +83,24 @@ const SecurityFootageComponent: React.FC = () => {
   }
 
   return (
-    <Container>
-      <h2 className="text-center">Security Footage</h2>
+    <div>
+      <h2 className="text-center mb-4">Security Footage</h2>
       {videos.length === 0 ? (
         <p className="text-center">No clips found</p>
       ) : (
-        <Row>
+        <div className="flex flex-wrap justify-center gap-3">
           {videos.map((video, index) => (
-            <Col key={index} xs={12} sm={6} md={4} lg={3} className="mb-3">
-              <Button
-                onClick={() => handleVideoSelect(video)}
-                variant="secondary"
-                //block
-              >
-                {video.deviceLocation} - {convertTimestamp(video.timeSent)}
-              </Button>
-            </Col>
+            <Button
+              key={index}
+              onClick={() => handleVideoSelect(video)}
+              color="secondary"
+            >
+              {video.deviceLocation} - {convertTimestamp(video.timeSent)}
+            </Button>
           ))}
-        </Row>
+        </div>
       )}
-    </Container>
+    </div>
   );
 };
 

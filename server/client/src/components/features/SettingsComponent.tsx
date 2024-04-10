@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Container,
-  Form,
-  Button,
-  ToggleButtonGroup,
-  ToggleButton,
-  Alert,
-  Row,
-  Col,
-} from "react-bootstrap";
+import { Input, Checkbox, Switch, Button } from "@nextui-org/react";
 import {
   updateEmail,
   updatePassword,
@@ -18,6 +9,8 @@ import {
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../utils/firebase";
 import { getAuth } from "firebase/auth";
+import { EyeFilledIcon } from "./EyeFilledIcon";
+import { EyeSlashFilledIcon } from "./EyeSlashFilledIcon";
 
 type Camera = {
   id: string;
@@ -35,6 +28,11 @@ const SettingsComponent: React.FC = () => {
   const [success, setSuccess] = useState<string>("");
   const [currentPassword, setCurrentPassword] = useState<string>("");
   const [cameras, setCameras] = useState<Camera[]>([]);
+  const [isVisibleNew, setIsVisibleNew] = useState<boolean>(false);
+  const [isVisibleOld, setIsVisibleOld] = useState<boolean>(false);
+
+  const toggleVisibilityNew = () => setIsVisibleNew(!isVisibleNew);
+  const toggleVisibilityOld = () => setIsVisibleOld(!isVisibleNew);
 
   const user = auth.currentUser;
   const userRef = user ? doc(db, "users", user.uid) : null;
@@ -45,11 +43,22 @@ const SettingsComponent: React.FC = () => {
         getDoc(userRef).then((docSnap) => {
           if (docSnap.exists()) {
             const userData = docSnap.data();
+            // Set the states with fetched data or default values
             setEmail(userData.email || "");
             setName(userData.name || "");
-            setNotifications(userData.notifications);
+            setNotifications(
+              userData.notifications !== undefined
+                ? userData.notifications
+                : false
+            );
+            console.log(userData.theme);
+            console.log(userData.theme || "light");
             setTheme(userData.theme || "light");
-            setRecognizeFaces(userData.recognizeFaces);
+            setRecognizeFaces(
+              userData.recognizeFaces !== undefined
+                ? userData.recognizeFaces
+                : false
+            );
           }
         });
       }
@@ -106,16 +115,23 @@ const SettingsComponent: React.FC = () => {
   const handlePasswordChange = handleChange(setPassword);
   const handleCurrentPasswordChange = handleChange(setCurrentPassword);
   const handleNameChange = handleChange(setName);
-  const handleNotificationsChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setNotifications(e.target.checked);
+
+  const handleNotifications = (notifications: boolean) => {
+    setNotifications(notifications);
     setSuccess("");
   };
 
-  const handleRecognizeFaces = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRecognizeFaces(e.target.checked);
+  const handleRecognizeFaces = (recg: boolean) => {
+    setRecognizeFaces(recg);
     setSuccess("");
+  };
+  const handleThemeChange = (newTheme: boolean) => {
+    setTheme(newTheme ? "dark" : "light");
+    if (newTheme) {
+      document.body.classList.add("dark");
+    } else {
+      document.body.classList.remove("dark");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -158,9 +174,9 @@ const SettingsComponent: React.FC = () => {
       });
 
       if (theme === "dark") {
-        document.body.classList.add("darkTheme");
+        document.body.classList.add("dark");
       } else {
-        document.body.classList.remove("darkTheme");
+        document.body.classList.remove("dark");
       }
       setSuccess("Settings updated successfully!");
       setError("");
@@ -177,129 +193,167 @@ const SettingsComponent: React.FC = () => {
   if (!user) {
     return <p>Loading user data...</p>;
   }
+  const centeredStyle: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    padding: "20px",
+    boxSizing: "border-box",
+  };
+
+  const inputStyle = {
+    fontSize: "1.2em",
+  };
 
   return (
-    <Container>
-      <h2 className="text-center">Settings</h2>
-      {error && <Alert variant="danger">{error}</Alert>}
-      {success && <Alert variant="success">{success}</Alert>}
-      <Form.Group controlId="formBasicName">
-        <Form.Label>Name</Form.Label>
-        <Form.Control
-          type="text"
-          placeholder="Enter name"
+    <div style={centeredStyle}>
+      <h1 style={{ marginBottom: "20px" }}>Settings</h1>
+      {/* Error and success messages */}
+      {error && <p color="danger">{error}</p>}
+      {success && <p color="success">{success}</p>}
+
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col items-center w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4"
+      >
+        {/* Name Input */}
+        <Input
+          isRequired
+          variant="bordered"
+          type="string"
+          label="Name"
           value={name}
+          labelPlacement="outside"
+          placeholder="Enter your name"
+          className="max-w-xs"
           onChange={handleNameChange}
+          style={inputStyle}
         />
-      </Form.Group>
-      <Form onSubmit={handleSubmit}>
-        <Form.Group controlId="formBasicEmail">
-          <Form.Label>Email Address</Form.Label>
-          <Form.Control
-            type="email"
-            placeholder="Enter email"
-            value={email}
-            autoComplete="new-email"
-            onChange={handleEmailChange}
-          />
-        </Form.Group>
 
-        <Form.Group controlId="formBasicPassword">
-          <Form.Label>New Password</Form.Label>
-          <Form.Control
-            type="password"
-            placeholder="New Password"
-            value={password}
-            autoComplete="new-password"
-            onChange={handlePasswordChange}
-          />
-        </Form.Group>
-        <Form.Group controlId="formBasicCurrentPassword">
-          <Form.Label>Current Password</Form.Label>
-          <Form.Control
-            type="password"
-            placeholder="Current Password"
-            value={currentPassword}
-            onChange={handleCurrentPasswordChange}
-            autoComplete="off"
-          />
-        </Form.Group>
-        <Form.Group controlId="formBasicCheckbox" className="mb-3">
-          <Form.Check
-            type="checkbox"
-            label="Enable Notifications"
-            checked={notifications}
-            onChange={handleNotificationsChange}
-            className="d-flex justify-content-center"
-          />
-        </Form.Group>
+        {/* Email Input */}
+        <Input
+          isClearable
+          isRequired
+          variant="bordered"
+          type="email"
+          label="Email"
+          value={email}
+          labelPlacement="outside"
+          placeholder="Enter your email"
+          className="max-w-xs"
+          onChange={handleEmailChange}
+          style={inputStyle}
+        />
 
-        <Form.Group controlId="formBasicCheckbox" className="mb-3">
-          <Form.Check
-            type="checkbox"
-            label="Enable Face Recognition"
-            checked={recognizeFaces}
-            onChange={handleRecognizeFaces}
-            className="d-flex justify-content-center"
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-3">
-          <Form.Label>Theme</Form.Label>
-          <ToggleButtonGroup
-            type="radio"
-            name="themes"
-            value={theme}
-            className="d-flex justify-content-center"
-          >
-            <ToggleButton
-              id="tbg-radio-1"
-              value="light"
-              variant={theme === "light" ? "primary" : "outline-secondary"}
-              checked={theme === "light"}
-              onChange={(e) => setTheme(e.currentTarget.value)}
+        <Input
+          isClearable
+          label="Current Password"
+          variant="bordered"
+          labelPlacement="outside"
+          value={currentPassword}
+          autoComplete="off"
+          onChange={handleCurrentPasswordChange}
+          placeholder="Enter your Current Password"
+          style={inputStyle}
+          endContent={
+            <button
+              className="focus:outline-none"
+              type="button"
+              onClick={toggleVisibilityOld}
             >
-              Light
-            </ToggleButton>
-            <ToggleButton
-              id="tbg-radio-2"
-              value="dark"
-              variant={theme === "dark" ? "primary" : "outline-secondary"}
-              checked={theme === "dark"}
-              onChange={(e) => setTheme(e.currentTarget.value)}
+              {isVisibleOld ? (
+                <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+              ) : (
+                <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+              )}
+            </button>
+          }
+          type={isVisibleOld ? "text" : "password"}
+          className="max-w-xs"
+        />
+        <Input
+          isClearable
+          label="New Password"
+          variant="bordered"
+          labelPlacement="outside"
+          value={password}
+          autoComplete="off"
+          onChange={handlePasswordChange}
+          placeholder="Enter your New Password"
+          style={inputStyle}
+          endContent={
+            <button
+              className="focus:outline-none"
+              type="button"
+              onClick={toggleVisibilityNew}
             >
-              Dark
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Form.Group>
-        <h3 className="mt-4">Connected Cameras</h3>
+              {isVisibleNew ? (
+                <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+              ) : (
+                <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+              )}
+            </button>
+          }
+          type={isVisibleNew ? "text" : "password"}
+          className="max-w-xs"
+        />
+
+        {/* Theme Switch */}
+        <Switch
+          checked={theme === "dark"}
+          isSelected={theme === "dark"}
+          style={inputStyle}
+          onChange={(e) => handleThemeChange(e.target.checked)}
+        >
+          Dark Mode
+        </Switch>
+
+        <Switch
+          checked={recognizeFaces}
+          isSelected={recognizeFaces}
+          style={inputStyle}
+          onChange={(e) => handleRecognizeFaces(e.target.checked)}
+        >
+          Recognize Faces
+        </Switch>
+        <Switch
+          checked={notifications}
+          isSelected={notifications}
+          style={inputStyle}
+          onChange={(e) => handleNotifications(e.target.checked)}
+        >
+          Notifications
+        </Switch>
+        {/* Camera List and Remove Button */}
+        <h3 className="mt-4 mb-3">Connected Cameras</h3>
         {cameras.length > 0 ? (
           cameras.map((camera) => (
-            <Row key={camera.id} className="align-items-center mb-2">
-              <Col md={8} sm={6}>
-                <p className="mb-0">
-                  {camera.id} - {camera.location}
-                </p>
-              </Col>
-              <Col md={4} sm={6} className="text-md-right text-sm-left">
+            <div key={camera.id}>
+              <p>
+                {camera.id} - {camera.location}
                 <Button
-                  variant="outline-danger"
-                  size="sm"
+                  style={inputStyle}
+                  color="danger"
+                  type="button" // Important to specify the type
                   onClick={() => handleRemoveCamera(camera.id)}
                 >
                   Remove
                 </Button>
-              </Col>
-            </Row>
+              </p>
+            </div>
           ))
         ) : (
           <p>No cameras connected</p>
         )}
-        <Button variant="primary" type="submit">
+
+        {/* Submit Button */}
+        <Button type="submit" className="mt-3" style={inputStyle}>
           Save Changes
         </Button>
-      </Form>
-    </Container>
+      </form>
+    </div>
   );
 };
 
