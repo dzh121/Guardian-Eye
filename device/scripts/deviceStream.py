@@ -45,6 +45,8 @@ class DeviceStream:
 
     def init_camera(self):
         camera = cv2.VideoCapture(0)
+        camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         if not camera.isOpened():
             print("Error: Camera is not available")
             exit(0)
@@ -71,11 +73,31 @@ class DeviceStream:
         while True:
             with self.camera_lock:
                 success, frame = self.camera.read()
-                if not success:
-                    break
+            if not success:
+                break
+
+            frame = self.resize_frame(frame)  # Resize outside of lock
             ret, buffer = cv2.imencode(".jpg", frame)
             frame = buffer.tobytes()
             yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+
+    def resize_frame(self, frame):
+        height, width = frame.shape[:2]
+        desired_aspect_ratio = 16 / 9
+        actual_aspect_ratio = width / height
+
+        if actual_aspect_ratio > desired_aspect_ratio:
+            # Frame is wider than desired aspect ratio
+            new_width = int(desired_aspect_ratio * height)
+            start_x = width // 2 - new_width // 2
+            frame = frame[:, start_x : start_x + new_width]
+        elif actual_aspect_ratio < desired_aspect_ratio:
+            # Frame is taller than desired aspect ratio
+            new_height = int(width / desired_aspect_ratio)
+            start_y = height // 2 - new_height // 2
+            frame = frame[start_y : start_y + new_height, :]
+
+        return frame
 
     def register_device(self):
         if self.user_id:
@@ -99,14 +121,18 @@ class DeviceStream:
             print(f"Error registering device: {e}")
 
     def run_server(self, in_background=False):
-        flask_thread = threading.Thread(
-            target=lambda: self.app.run(host="0.0.0.0", port=self.PORT, threaded=True)
-        )
-        flask_thread.start()
-        time.sleep(5)
-        self.register_device()
-        if not in_background:
-            flask_thread.join()
+        if in_background:
+            flask_thread = threading.Thread(
+                target=lambda: self.app.run(
+                    host="0.0.0.0",
+                    port=self.PORT,
+                    threaded=True,  # This enables multi-threading
+                )
+            )
+            flask_thread.daemon = True
+            flask_thread.start()
+        else:
+            self.app.run(host="0.0.0.0", port=self.PORT, threaded=True)
 
     def get_port(self):
         return self.PORT
