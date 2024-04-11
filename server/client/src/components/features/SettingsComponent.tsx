@@ -9,14 +9,17 @@ import {
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../utils/firebase";
 import { getAuth } from "firebase/auth";
-import { EyeFilledIcon } from "./EyeFilledIcon";
-import { EyeSlashFilledIcon } from "./EyeSlashFilledIcon";
+import { EyeFilledIcon } from "../../utils/EyeFilledIcon";
+import { EyeSlashFilledIcon } from "../../utils/EyeSlashFilledIcon";
 
 type Camera = {
   id: string;
   location: string;
 };
-
+interface MessageProps {
+  message: string;
+  type: "error" | "success";
+}
 const SettingsComponent: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [name, setName] = useState<string>("");
@@ -206,13 +209,26 @@ const SettingsComponent: React.FC = () => {
   const inputStyle = {
     fontSize: "1.2em",
   };
-
+  const Message: React.FC<MessageProps> = ({ message, type }) => (
+    <div
+      style={{
+        backgroundColor: type === "error" ? "#ff4d4f" : "#52c41a",
+        color: "white",
+        padding: "10px",
+        borderRadius: "5px",
+        textAlign: "center",
+        marginBottom: "10px",
+      }}
+    >
+      {message}
+    </div>
+  );
   return (
     <div style={centeredStyle}>
-      <h1 style={{ marginBottom: "20px" }}>Settings</h1>
+      <h1 className="font-bold text-large mb-3">Settings</h1>
       {/* Error and success messages */}
-      {error && <p color="danger">{error}</p>}
-      {success && <p color="success">{success}</p>}
+      {error && <Message message={error} type="error" />}
+      {success && <Message message={success} type="success" />}
 
       <form
         onSubmit={handleSubmit}
@@ -336,6 +352,7 @@ const SettingsComponent: React.FC = () => {
                 <Button
                   style={inputStyle}
                   color="danger"
+                  className="ms-3"
                   type="button" // Important to specify the type
                   onClick={() => handleRemoveCamera(camera.id)}
                 >
