@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getAuth } from "firebase/auth";
-// import { Button, Container, Row, Col, Alert } from "react-bootstrap";
+import Hls from "hls.js";
 import moment from "moment";
 import {
   Card,
@@ -28,6 +28,7 @@ const LiveVideoComponent: React.FC = () => {
   const [currentTime, setCurrentTime] = useState<string>(
     moment().format("DD/MM/YYYY, HH:mm:ss")
   );
+  const [streamUrl, setStreamUrl] = useState<string>("");
 
   // Update currentTime every second
   useEffect(() => {
@@ -91,6 +92,23 @@ const LiveVideoComponent: React.FC = () => {
 
     checkCameraStatusAndSetUrl();
   }, [selectedDevice]);
+  useEffect(() => {
+    const fetchStreamUrl = async () => {
+      if (selectedDevice) {
+        const currentUser = getAuth().currentUser;
+        if (currentUser) {
+          const token = await currentUser.getIdToken();
+          const deviceUrlWithToken = `${selectedDevice.url}?token=${token}`;
+          setStreamUrl(deviceUrlWithToken);
+        } else {
+          console.log("User not logged in");
+          setIsCameraOnline(false);
+        }
+      }
+    };
+
+    fetchStreamUrl();
+  }, [selectedDevice]);
 
   // Handling device selection
   const handleDeviceSelection = (device: Device) => {
@@ -120,15 +138,17 @@ const LiveVideoComponent: React.FC = () => {
           <p className="font-bold text-large">{currentTime}</p>
         </CardHeader>
 
-        <CardBody>
+        <CardBody className="items-center">
           {isCameraOnline ? (
             videoUrl && (
-              <iframe
-                src={videoUrl}
-                title="Live Video Feed"
-                style={{ width: "100%", height: "500px" }}
-                allowFullScreen
-              ></iframe>
+              <img
+                src={streamUrl}
+                alt="Live Video Feed"
+                style={{
+                  width: "1280px", // This will ensure that the image takes the full width of the container
+                  height: "720px", // This will maintain the aspect ratio of the image
+                }}
+              />
             )
           ) : (
             <p className="text-center">Camera not online</p>
