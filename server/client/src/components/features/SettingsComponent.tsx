@@ -11,9 +11,11 @@ import { auth, db } from "../../utils/firebase";
 import { getAuth } from "firebase/auth";
 import { EyeFilledIcon } from "../../utils/EyeFilledIcon";
 import { EyeSlashFilledIcon } from "../../utils/EyeSlashFilledIcon";
+import { collection, getDocs, query, deleteDoc } from "firebase/firestore";
 
 type Camera = {
   id: string;
+  docId: string;
   location: string;
 };
 interface MessageProps {
@@ -70,14 +72,16 @@ const SettingsComponent: React.FC = () => {
       // Replace this with your API call or Firebase call to fetch cameras
       const currentUser = getAuth().currentUser;
       if (currentUser) {
-        const token = await currentUser.getIdToken();
+        const uid = currentUser.uid;
+        const devicesQuery = query(collection(db, "cameras", uid, "devices"));
+        const querySnapshot = await getDocs(devicesQuery);
+        const devicesData = querySnapshot.docs.map((doc) => ({
+          id: doc.data().deviceId,
+          docId: doc.id,
+          location: doc.data().location,
+        }));
 
-        const response = await fetch(
-          `http://localhost:8080/devices?token=${token}`
-        );
-
-        const camerasData = await response.json();
-        setCameras(camerasData);
+        setCameras(devicesData);
       } else {
         console.log("User not logged in");
       }
@@ -86,27 +90,23 @@ const SettingsComponent: React.FC = () => {
     fetchCameras();
   }, [user, userRef]);
 
-  const handleRemoveCamera = async (cameraId: string) => {
+  const handleRemoveCamera = async (docId: string) => {
     try {
-      const currentUser = getAuth().currentUser;
-      if (currentUser) {
-        const token = await currentUser.getIdToken();
-        await fetch(`http://localhost:8080/remove-device?token=${token}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id: cameraId }),
-        });
-        setCameras(cameras.filter((camera) => camera.id !== cameraId));
+      const user = getAuth().currentUser;
+      if (user) {
+        const cameraRef = doc(db, "cameras", user.uid, "devices", docId);
+        await deleteDoc(cameraRef);
+        setCameras(cameras.filter((c) => c.docId !== docId));
         setSuccess("Camera removed successfully!");
       } else {
         setError("User not logged in");
       }
-    } catch (error) {
-      setError("Error removing camera");
+    } catch (error: any) {
+      console.error("Error removing camera:", error);
+      setError("Failed to remove camera: " + error.message);
     }
   };
+
   const handleChange =
     (setState: React.Dispatch<React.SetStateAction<string>>) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -354,7 +354,7 @@ const SettingsComponent: React.FC = () => {
                   color="danger"
                   className="ms-3"
                   type="button" // Important to specify the type
-                  onClick={() => handleRemoveCamera(camera.id)}
+                  onClick={() => handleRemoveCamera(camera.docId)}
                 >
                   Remove
                 </Button>
