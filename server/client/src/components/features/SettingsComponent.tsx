@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Input, Checkbox, Switch, Button } from "@nextui-org/react";
+import { Input, Switch, Button } from "@nextui-org/react";
 import {
   updateEmail,
   updatePassword,
@@ -84,7 +84,7 @@ const SettingsComponent: React.FC = () => {
     };
 
     fetchCameras();
-  }, []);
+  }, [user, userRef]);
 
   const handleRemoveCamera = async (cameraId: string) => {
     try {

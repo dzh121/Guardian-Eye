@@ -3,7 +3,6 @@ const http = require("http");
 const path = require("path");
 const cors = require("cors");
 const multer = require("multer");
-const fs = require("fs");
 const { admin } = require("./config/firebase");
 const rateLimit = require("express-rate-limit");
 

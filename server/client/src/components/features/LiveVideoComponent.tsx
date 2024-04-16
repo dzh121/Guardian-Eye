@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
-import Hls from "hls.js";
 import moment from "moment";
 import {
   Card,
@@ -8,10 +7,10 @@ import {
   CardBody,
   CardFooter,
   Divider,
-  Link,
-  Image,
   Button,
 } from "@nextui-org/react";
+import { db } from "../../utils/firebase";
+import { collection, getDocs, query } from "firebase/firestore";
 
 type Device = {
   id: string;
@@ -45,15 +44,24 @@ const LiveVideoComponent: React.FC = () => {
       setIsLoading(true);
       const currentUser = getAuth().currentUser;
       if (currentUser) {
-        const token = await currentUser.getIdToken();
-        const response = await fetch(
-          `http://localhost:8080/devices?token=${token}`
-        );
-        const data = await response.json();
-        setDevices(data);
+        const uid = currentUser.uid;
+        try {
+          const devicesQuery = query(collection(db, "cameras", uid, "devices"));
+          const querySnapshot = await getDocs(devicesQuery);
+          const devicesData = querySnapshot.docs.map((doc) => ({
+            id: doc.data().deviceId,
+            location: doc.data().location,
+            url: doc.data().videoUrl,
+          }));
+          setDevices(devicesData);
+        } catch (error) {
+          console.error("Error fetching devices:", error);
+          setDevices([]);
+        }
         setIsLoading(false);
       } else {
         console.log("User not logged in");
+        setIsLoading(false);
       }
     };
     fetchDevices();
@@ -69,12 +77,14 @@ const LiveVideoComponent: React.FC = () => {
           if (currentUser) {
             const token = await currentUser.getIdToken();
 
-            const deviceUrlWithToken = `${selectedDevice.url}?token=${token}`;
+            const headers = {
+              Authorization: `Bearer ${token}`,
+            };
 
             // Check if the camera server is reachable
-            const response = await fetch(deviceUrlWithToken);
+            const response = await fetch(selectedDevice.url, { headers });
             if (response.ok) {
-              setVideoUrl(deviceUrlWithToken);
+              setVideoUrl(selectedDevice.url);
               setIsCameraOnline(true);
             } else {
               throw new Error("Camera server not reachable");
@@ -145,8 +155,8 @@ const LiveVideoComponent: React.FC = () => {
                 src={streamUrl}
                 alt="Live Video Feed"
                 style={{
-                  width: "1280px", // This will ensure that the image takes the full width of the container
-                  height: "720px", // This will maintain the aspect ratio of the image
+                  width: "1280px",
+                  height: "720px",
                 }}
               />
             )

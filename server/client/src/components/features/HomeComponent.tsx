@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   Card,
   CardHeader,
@@ -11,25 +11,6 @@ import {
 } from "@nextui-org/react";
 
 const HomeComponent: React.FC = () => {
-  const [theme, setTheme] = useState<string>("light");
-
-  useEffect(() => {
-    // Listen for theme changes and update the component
-    const handleThemeChange = () => {
-      const isDarkTheme = document.body.classList.contains("dark");
-      setTheme(isDarkTheme ? "dark" : "light");
-    };
-
-    handleThemeChange(); // Initial theme setup
-
-    // Assume "themeChange" is a custom event you've defined elsewhere
-    window.addEventListener("themeChange", handleThemeChange);
-
-    return () => {
-      window.removeEventListener("themeChange", handleThemeChange);
-    };
-  }, []);
-
   return (
     <div className="home-component">
       <h2 className="text-center home-title">

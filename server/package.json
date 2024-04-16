@@ -1,16 +1,10 @@
 {
   "dependencies": {
-    "axios": "^1.6.7",
     "cors": "^2.8.5",
     "express": "^4.18.3",
     "express-rate-limit": "^7.2.0",
-    "express-session": "^1.18.0",
-    "firebase": "^8.6.8",
     "firebase-admin": "^12.0.0",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
-    "react-router-dom": "^6.22.3",
-    "socket.io-client": "^4.7.4"
+    "multer": "^1.4.5-lts.1"
   },
   "scripts": {
     "start": "node server.js"
@@ -20,6 +14,7 @@
   "main": "server.js",
   "author": "Dzh121",
   "license": "MIT",
+  "type": "commonjs",
   "description": "Guardian Eye is a web application that allows users to monitor their home security cameras from anywhere in the world.",
   "repository": {
     "type": "git",
