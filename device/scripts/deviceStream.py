@@ -1,11 +1,10 @@
-from flask import Flask, Response, request, abort
+from flask import Flask, Response, request, abort, jsonify
 import cv2
 import threading
 import requests
 import os
 from dotenv import load_dotenv
-import firebase_admin
-from firebase_admin import credentials, auth
+from firebase_admin import credentials, firestore, auth
 import time
 from flask_cors import CORS
 import hashlib
@@ -25,9 +24,12 @@ class DeviceStream:
 
         self.user_id = user_id
         self.id_token = id_token
+        self.db = firestore.client()
+
         self.camera = self.init_camera()
         self.camera_lock = threading.Lock()
-        self.PORT = self.get_port_from_hash(self.hash_device_id(self.DEVICE_ID))
+        self.HASH = self.hash_device_id(self.DEVICE_ID)
+        self.PORT = self.get_port_from_hash(int(self.HASH, 16))
 
         self.app = Flask(__name__)
         CORS(self.app)
@@ -36,12 +38,33 @@ class DeviceStream:
     def setup_routes(self):
         @self.app.route("/video_feed")
         def video_feed():
-            token = request.args.get("token")
-            if not self.verify_token(token):
-                abort(401, "Unauthorized access")
-            return Response(
-                self.gen_frames(), mimetype="multipart/x-mixed-replace; boundary=frame"
-            )
+            auth_header = request.headers.get("Authorization")
+            token = None
+
+            if auth_header:
+                try:
+                    token = auth_header.split(" ")[1]
+                except IndexError:
+                    return jsonify({"error": "Bearer token malformed"}), 400
+
+            if not token:
+                token = request.args.get("token")
+
+            if token:
+                if self.verify_token(token):
+                    return Response(
+                        self.gen_frames(),
+                        mimetype="multipart/x-mixed-replace; boundary=frame",
+                    )
+                else:
+                    return jsonify({"error": "Unauthorized access"}), 401
+            else:
+                return (
+                    jsonify(
+                        {"error": "Authorization header or token parameter is missing"}
+                    ),
+                    401,
+                )
 
     def init_camera(self):
         camera = cv2.VideoCapture(0)
@@ -53,7 +76,7 @@ class DeviceStream:
         return camera
 
     def hash_device_id(self, device_id):
-        return int(hashlib.md5(device_id.encode()).hexdigest(), 16)
+        return hashlib.md5(device_id.encode()).hexdigest()
 
     def get_port_from_hash(self, hash_number, min_port=5000, max_port=6000):
         return min_port + hash_number % (max_port - min_port)
@@ -62,7 +85,7 @@ class DeviceStream:
         try:
             if token:
                 decoded_token = auth.verify_id_token(token, check_revoked=True)
-                return decoded_token
+                return decoded_token["uid"] == self.user_id
             else:
                 return None
         except Exception as e:
@@ -106,17 +129,22 @@ class DeviceStream:
             print("Login failed.")
         try:
             registration_info = {
-                "id": self.DEVICE_ID,
-                "loc": self.DEVICE_LOCATION,
-                "url": f"http://localhost:{self.PORT}/video_feed",
-                "user_id": self.user_id,
+                "deviceId": self.DEVICE_ID,
+                "location": self.DEVICE_LOCATION,
+                "videoUrl": f"http://localhost:{self.PORT}/video_feed",
             }
-            response = requests.post(
-                f"{self.CENTRAL_SERVICE_URL}/register", json=registration_info
+            # Adding data to Firestore collection named 'devices'
+            doc_ref = (
+                self.db.collection("cameras")
+                .document(self.user_id)
+                .collection("devices")
+                .document(self.HASH)
             )
-            print(f"Registration response: {response.status_code}, {response.text}")
-        except requests.exceptions.RequestException as e:
-            print(f"HTTP Request failed: {e}")
+
+            doc_ref.set(registration_info)
+            print(
+                f"Registration information added to Firestore under the devices collection with document ID {self.DEVICE_ID}"
+            )
         except Exception as e:
             print(f"Error registering device: {e}")
 
