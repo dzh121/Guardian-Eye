@@ -6,11 +6,11 @@ import {
   Navigate,
 } from "react-router-dom";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { collection, getDoc, doc } from "firebase/firestore";
+import { getDoc, doc, DocumentData } from "firebase/firestore";
 
 import { auth, db } from "./utils/firebase";
 import Header from "./components/common/Header";
-import Sidebar from "./components/common/Sidebar";
+// import Sidebar from "./components/common/Sidebar";
 import Footer from "./components/common/Footer";
 import HomeComponent from "./components/features/HomeComponent";
 import LiveVideoComponent from "./components/features/LiveVideoComponent";
@@ -24,15 +24,9 @@ import FamiliarFacesComponent from "./components/features/FamiliarFacesComponent
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
-function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [darkTheme, setDarkTheme] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+const App: React.FC = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -43,13 +37,11 @@ function App() {
         const userData = await getDoc(userDocRef);
 
         if (userData.exists()) {
-          const userDataObj = userData.data();
-          if (userDataObj.theme === "dark") {
-            document.body.classList.add("darkTheme");
-            setDarkTheme(true);
+          const userDataObj: DocumentData | undefined = userData.data();
+          if (userDataObj?.theme === "dark") {
+            document.body.classList.add("dark");
           } else {
-            document.body.classList.remove("darkTheme");
-            setDarkTheme(false);
+            document.body.classList.remove("dark");
           }
         }
       } else {
@@ -73,7 +65,7 @@ function App() {
       });
   };
 
-  const handleLogin = (status) => {
+  const handleLogin = (status: boolean) => {
     setIsLoggedIn(status);
   };
 
@@ -83,19 +75,9 @@ function App() {
 
   return (
     <Router>
-      <Header
-        isSidebarOpen={isSidebarOpen}
-        toggleSidebar={toggleSidebar}
-        isLoggedIn={isLoggedIn}
-      />
-      {isLoggedIn ? (
-        <Sidebar
-          isOpen={isSidebarOpen}
-          isLoggedIn={isLoggedIn}
-          onLogout={handleLogout}
-        />
-      ) : null}
-      <div className={`main-content ${isSidebarOpen ? "shifted" : ""}`}>
+      <Header handleLogout={handleLogout} isLoggedIn={isLoggedIn} />
+      {isLoggedIn ? <p></p> : null}
+      <div className={`main-content`}>
         <Routes>
           {isLoggedIn ? (
             <>
@@ -128,6 +110,6 @@ function App() {
       <Footer />
     </Router>
   );
-}
+};
 
 export default App;

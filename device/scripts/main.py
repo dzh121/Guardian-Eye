@@ -471,10 +471,17 @@ if __name__ == "__main__":
         device_stream = deviceStream.DeviceStream(user_id, id_token)
         PORT = device_stream.get_port()
         device_stream.run_server(in_background=True)
-
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    try:
         main_thread = threading.Thread(target=main)
+        main_thread.daemon = True
         main_thread.start()
         main_thread.join()
-
+    except KeyboardInterrupt:
+        # Handle Ctrl-C and ensure threads are stopped
+        stop_threads()
+        print("Exiting program.")
     except Exception as e:
+        stop_threads()  # Ensure threads are stopped on exception
         print(f"An error occurred: {e}")

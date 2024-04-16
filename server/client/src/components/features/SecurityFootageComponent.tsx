@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
 import VideoComponent from "./VideoComponent";
-import { Button, Container, Row, Col } from "react-bootstrap";
+import { Button } from "@nextui-org/react";
 
-const SecurityFootageComponent = () => {
-  const [videos, setVideos] = useState([]);
-  const [selectedVideo, setSelectedVideo] = useState(null);
-  const [fetchingClips, setFetchingClips] = useState(true);
+type Video = {
+  deviceLocation: string;
+  timeSent: { _seconds: number };
+  fileName: string;
+};
+
+const SecurityFootageComponent: React.FC = () => {
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [fetchingClips, setFetchingClips] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchUserToken = async () => {
@@ -31,18 +37,17 @@ const SecurityFootageComponent = () => {
 
         const data = await response.json();
         setVideos(data.videos);
-        setFetchingClips(false); // Set fetchingClips to false once clips are fetched
+        setFetchingClips(false);
       } catch (error) {
         console.error("Error fetching videos: ", error);
-        setFetchingClips(false); // Set fetchingClips to false in case of error too
-        // Optionally, set an error state and display it in the UI
+        setFetchingClips(false);
       }
     };
 
     fetchVideos();
   }, []);
 
-  const handleVideoSelect = (video) => {
+  const handleVideoSelect = (video: Video) => {
     setSelectedVideo(video);
   };
 
@@ -50,7 +55,7 @@ const SecurityFootageComponent = () => {
     setSelectedVideo(null);
   };
 
-  const convertTimestamp = (timestamp) => {
+  const convertTimestamp = (timestamp: { _seconds: number }): string => {
     if (timestamp && timestamp._seconds) {
       const date = new Date(timestamp._seconds * 1000);
       const day = date.getDate().toString().padStart(2, "0");
@@ -76,28 +81,43 @@ const SecurityFootageComponent = () => {
       </div>
     );
   }
+  const chunkVideos = (videos: Video[], size: number) => {
+    return videos.reduce((acc, val, i) => {
+      let idx = Math.floor(i / size);
+      let page = acc[idx] || (acc[idx] = []);
+      page.push(val);
 
+      return acc;
+    }, [] as Video[][]);
+  };
+
+  const videoRows = chunkVideos(videos, 4);
   return (
-    <Container>
-      <h2 className="text-center">Security Footage</h2>
+    <div>
+      <h2 className="text-center mb-4 font-bold text-large">
+        Security Footage
+      </h2>
       {videos.length === 0 ? (
         <p className="text-center">No clips found</p>
       ) : (
-        <Row>
-          {videos.map((video, index) => (
-            <Col key={index} xs={12} sm={6} md={4} lg={3} className="mb-3">
+        videoRows.map((row, rowIndex) => (
+          <div
+            key={rowIndex}
+            className="flex flex-wrap justify-center gap-3 mb-3"
+          >
+            {row.map((video, index) => (
               <Button
+                key={index}
                 onClick={() => handleVideoSelect(video)}
-                variant="secondary"
-                block
+                color="secondary"
               >
                 {video.deviceLocation} - {convertTimestamp(video.timeSent)}
               </Button>
-            </Col>
-          ))}
-        </Row>
+            ))}
+          </div>
+        ))
       )}
-    </Container>
+    </div>
   );
 };
 

@@ -1,41 +1,47 @@
 import React, { useState, useEffect } from "react";
-import { Card, Button } from "react-bootstrap";
+// import { Card, Button } from "react-bootstrap";
 import { getAuth } from "firebase/auth";
+import { Card, CardHeader, CardBody, Divider, Button } from "@nextui-org/react";
+// Define types for props and state
+type VideoComponentProps = {
+  videoFilename: {
+    deviceLocation: string;
+    timeSent: { _seconds: number };
+    fileName: string; // Assuming this is the structure based on usage
+  };
+  onGoBack: () => void;
+};
 
-const VideoComponent = ({ videoFilename, onGoBack }) => {
-  const [videoStream, setVideoStream] = useState(null);
-  const [videoDetails, setVideoDetails] = useState({
+type VideoDetails = {
+  location: string;
+  timestamp: { _seconds: number } | "";
+};
+
+const VideoComponent: React.FC<VideoComponentProps> = ({
+  videoFilename,
+  onGoBack,
+}) => {
+  const [videoStream, setVideoStream] = useState<string | null>(null);
+  const [videoDetails, setVideoDetails] = useState<VideoDetails>({
     location: "",
     timestamp: "",
   });
-  const [theme, setTheme] = useState("light");
 
   useEffect(() => {
-    const handleThemeChange = () => {
-      const isDarkTheme = document.body.classList.contains("darkTheme");
-      setTheme(isDarkTheme ? "dark" : "light");
-    };
-
-    handleThemeChange();
-
-    window.addEventListener("themeChange", handleThemeChange);
-
-    let videoObjectUrl;
+    let videoObjectUrl: string | null = null;
 
     const fetchUserToken = async () => {
       const user = getAuth().currentUser;
       if (user) {
         console.log("User is signed in, fetching token...");
-        window.removeEventListener("themeChange", handleThemeChange);
         return await user.getIdToken();
       } else {
         console.log("No user is signed in");
-        window.removeEventListener("themeChange", handleThemeChange);
         return null;
       }
     };
 
-    const fetchVideoStream = async (idToken, filename) => {
+    const fetchVideoStream = async (idToken: string, filename: string) => {
       console.log("Fetching video stream for:", filename);
       const response = await fetch(`/video/${filename}`, {
         method: "GET",
@@ -74,8 +80,10 @@ const VideoComponent = ({ videoFilename, onGoBack }) => {
     };
   }, [videoFilename]);
 
-  const convertFirestoreTimestampToDate = (timestamp) => {
-    if (timestamp && timestamp._seconds) {
+  const convertFirestoreTimestampToDate = (
+    timestamp: { _seconds: number } | ""
+  ): string => {
+    if (timestamp && typeof timestamp !== "string") {
       const date = new Date(timestamp._seconds * 1000);
       const day = date.getDate().toString().padStart(2, "0");
       const month = (date.getMonth() + 1).toString().padStart(2, "0");
@@ -92,29 +100,32 @@ const VideoComponent = ({ videoFilename, onGoBack }) => {
   return (
     <Card
       style={{
-        backgroundColor: theme === "dark" ? "#444" : "#fff",
         marginBottom: "120px",
       }}
     >
-      <Card.Body
+      <CardHeader className="flex gap-3 text-center">
+        <h1 className="font-bold text-large">Uploaded Video</h1>
+      </CardHeader>
+      <Divider />
+      <CardBody
         style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
         }}
       >
-        <Card.Title>Uploaded Video</Card.Title>
         {videoDetails.location && (
-          <Card.Text>
+          <p>
             <b>Location:</b> {videoDetails.location}
-          </Card.Text>
+          </p>
         )}
         {videoDetails.timestamp && (
-          <Card.Text>
+          <p>
             <b>Time Sent:</b>{" "}
             {convertFirestoreTimestampToDate(videoDetails.timestamp)}
-          </Card.Text>
+          </p>
         )}
+        <Divider />
         <video key={videoStream} width="88%" height="auto" controls>
           {videoStream ? (
             <source src={videoStream} type="video/mp4" />
@@ -122,14 +133,15 @@ const VideoComponent = ({ videoFilename, onGoBack }) => {
             "Loading video..."
           )}
         </video>
+        <Divider />
         <Button
           onClick={onGoBack}
           style={{ marginTop: "10px" }}
-          variant="primary"
+          color="primary"
         >
           Go Back
         </Button>
-      </Card.Body>
+      </CardBody>
     </Card>
   );
 };

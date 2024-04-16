@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)
 devices = {}
 
-cred = credentials.Certificate("./admin.json")
+cred = credentials.Certificate("../data/admin.json")
 firebase_admin.initialize_app(cred)
 
 
