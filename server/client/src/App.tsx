@@ -6,7 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { collection, getDoc, doc, DocumentData } from "firebase/firestore";
+import { getDoc, doc, DocumentData } from "firebase/firestore";
 
 import { auth, db } from "./utils/firebase";
 import Header from "./components/common/Header";
@@ -27,12 +27,6 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-  const [darkTheme, setDarkTheme] = useState<boolean>(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -46,10 +40,8 @@ const App: React.FC = () => {
           const userDataObj: DocumentData | undefined = userData.data();
           if (userDataObj?.theme === "dark") {
             document.body.classList.add("dark");
-            setDarkTheme(true);
           } else {
             document.body.classList.remove("dark");
-            setDarkTheme(false);
           }
         }
       } else {
@@ -85,7 +77,7 @@ const App: React.FC = () => {
     <Router>
       <Header handleLogout={handleLogout} isLoggedIn={isLoggedIn} />
       {isLoggedIn ? <p></p> : null}
-      <div className={`main-content ${isSidebarOpen ? "shifted" : ""}`}>
+      <div className={`main-content`}>
         <Routes>
           {isLoggedIn ? (
             <>

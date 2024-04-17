@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from "react";
 // import { Card, Button } from "react-bootstrap";
 import { getAuth } from "firebase/auth";
-import {
-  Card,
-  CardHeader,
-  CardBody,
-  CardFooter,
-  Divider,
-  Link,
-  Image,
-  Button,
-} from "@nextui-org/react";
+import { Card, CardHeader, CardBody, Divider, Button } from "@nextui-org/react";
 // Define types for props and state
 type VideoComponentProps = {
   videoFilename: {
@@ -35,29 +26,17 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
     location: "",
     timestamp: "",
   });
-  const [theme, setTheme] = useState<string>("light");
 
   useEffect(() => {
-    const handleThemeChange = () => {
-      const isDarkTheme = document.body.classList.contains("dark");
-      setTheme(isDarkTheme ? "dark" : "light");
-    };
-
-    handleThemeChange();
-
-    window.addEventListener("themeChange", handleThemeChange);
-
     let videoObjectUrl: string | null = null;
 
     const fetchUserToken = async () => {
       const user = getAuth().currentUser;
       if (user) {
         console.log("User is signed in, fetching token...");
-        window.removeEventListener("themeChange", handleThemeChange);
         return await user.getIdToken();
       } else {
         console.log("No user is signed in");
-        window.removeEventListener("themeChange", handleThemeChange);
         return null;
       }
     };
@@ -125,7 +104,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
       }}
     >
       <CardHeader className="flex gap-3 text-center">
-        <h1>Uploaded Video</h1>
+        <h1 className="font-bold text-large">Uploaded Video</h1>
       </CardHeader>
       <Divider />
       <CardBody

@@ -5,24 +5,15 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.5.1",
     "@nextui-org/react": "^2.2.10",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "axios": "^1.6.7",
     "bootstrap": "^5.3.3",
-    "dotenv": "^16.4.5",
     "firebase": "^10.6.0",
     "firebase-admin": "^12.0.0",
-    "fontawesome-free": "^1.0.4",
     "framer-motion": "^11.0.25",
     "moment": "^2.30.1",
-    "next-theme": "^0.1.5",
     "react": "^18.2.0",
-    "react-bootstrap": "^2.10.1",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3",
     "react-scripts": "^5.0.1",
-    "socket.io-client": "^4.7.4",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -56,11 +47,12 @@
   "main": "index.js",
   "author": "Dzh121",
   "license": "MIT",
-  "description": "",
   "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
     "@types/node": "^20.12.7",
     "@types/react": "^18.2.75",
     "@types/react-dom": "^18.2.24",
-    "typescript": "^5.4.4"
-  }
+    "typescript": "^4.9.5"
+  },
+  "description": ""
 }

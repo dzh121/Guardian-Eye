@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
-import { Button, Container, Row, Col, Alert } from "react-bootstrap";
 import moment from "moment";
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  Divider,
+  Button,
+} from "@nextui-org/react";
+import { db } from "../../utils/firebase";
+import { collection, getDocs, query } from "firebase/firestore";
 
 type Device = {
   id: string;
@@ -18,6 +27,7 @@ const LiveVideoComponent: React.FC = () => {
   const [currentTime, setCurrentTime] = useState<string>(
     moment().format("DD/MM/YYYY, HH:mm:ss")
   );
+  const [streamUrl, setStreamUrl] = useState<string>("");
 
   // Update currentTime every second
   useEffect(() => {
@@ -34,15 +44,24 @@ const LiveVideoComponent: React.FC = () => {
       setIsLoading(true);
       const currentUser = getAuth().currentUser;
       if (currentUser) {
-        const token = await currentUser.getIdToken();
-        const response = await fetch(
-          `http://localhost:8080/devices?token=${token}`
-        );
-        const data = await response.json();
-        setDevices(data);
+        const uid = currentUser.uid;
+        try {
+          const devicesQuery = query(collection(db, "cameras", uid, "devices"));
+          const querySnapshot = await getDocs(devicesQuery);
+          const devicesData = querySnapshot.docs.map((doc) => ({
+            id: doc.data().deviceId,
+            location: doc.data().location,
+            url: doc.data().videoUrl,
+          }));
+          setDevices(devicesData);
+        } catch (error) {
+          console.error("Error fetching devices:", error);
+          setDevices([]);
+        }
         setIsLoading(false);
       } else {
         console.log("User not logged in");
+        setIsLoading(false);
       }
     };
     fetchDevices();
@@ -58,12 +77,14 @@ const LiveVideoComponent: React.FC = () => {
           if (currentUser) {
             const token = await currentUser.getIdToken();
 
-            const deviceUrlWithToken = `${selectedDevice.url}?token=${token}`;
+            const headers = {
+              Authorization: `Bearer ${token}`,
+            };
 
             // Check if the camera server is reachable
-            const response = await fetch(deviceUrlWithToken);
+            const response = await fetch(selectedDevice.url, { headers });
             if (response.ok) {
-              setVideoUrl(deviceUrlWithToken);
+              setVideoUrl(selectedDevice.url);
               setIsCameraOnline(true);
             } else {
               throw new Error("Camera server not reachable");
@@ -80,6 +101,23 @@ const LiveVideoComponent: React.FC = () => {
     };
 
     checkCameraStatusAndSetUrl();
+  }, [selectedDevice]);
+  useEffect(() => {
+    const fetchStreamUrl = async () => {
+      if (selectedDevice) {
+        const currentUser = getAuth().currentUser;
+        if (currentUser) {
+          const token = await currentUser.getIdToken();
+          const deviceUrlWithToken = `${selectedDevice.url}?token=${token}`;
+          setStreamUrl(deviceUrlWithToken);
+        } else {
+          console.log("User not logged in");
+          setIsCameraOnline(false);
+        }
+      }
+    };
+
+    fetchStreamUrl();
   }, [selectedDevice]);
 
   // Handling device selection
@@ -98,60 +136,61 @@ const LiveVideoComponent: React.FC = () => {
   }
 
   if (devices.length === 0) {
-    return (
-      <Alert variant="warning" className="text-center">
-        No cameras found
-      </Alert>
-    );
+    return <p className="text-center">No cameras found</p>;
   }
+  if (selectedDevice) {
+    return (
+      <Card>
+        <CardHeader className="d-flex justify-content-between">
+          <p className="font-bold text-large">
+            {selectedDevice.id} - {selectedDevice.location}
+          </p>
+          <p className="font-bold text-large">{currentTime}</p>
+        </CardHeader>
 
-  return (
-    <Container>
-      <h2 className="text-center">Live Video Feed</h2>
-      {!selectedDevice ? (
-        <Row>
-          {devices.map((device, index) => (
-            <Col key={index} xs={12} className="mb-3">
-              <Button
-                onClick={() => handleDeviceSelection(device)}
-                variant="secondary"
-                // block
-              >
-                {device.id} - {device.location}
-              </Button>
-            </Col>
-          ))}
-        </Row>
-      ) : (
-        <div>
-          <div className="d-flex justify-content-between">
-            <p>
-              {selectedDevice.id} - {selectedDevice.location}
-            </p>
-            <p>{currentTime}</p>
-          </div>
+        <CardBody className="items-center">
           {isCameraOnline ? (
             videoUrl && (
-              <iframe
-                src={videoUrl}
-                title="Live Video Feed"
-                style={{ width: "100%", height: "700px" }}
-                allowFullScreen
-              ></iframe>
+              <img
+                src={streamUrl}
+                alt="Live Video Feed"
+                style={{
+                  width: "1280px",
+                  height: "720px",
+                }}
+              />
             )
           ) : (
-            <Alert variant="danger" className="text-center">
-              Camera not online
-            </Alert>
+            <p className="text-center">Camera not online</p>
           )}
-          <div className="text-center mt-3" style={{ marginBottom: "100px" }}>
-            <Button variant="secondary" onClick={handleGoBack}>
-              Go Back
+        </CardBody>
+        <CardFooter>
+          <div className="text-center">
+            <Button onClick={handleGoBack}>Go Back</Button>
+          </div>
+          <Divider />
+          <p>{currentTime}</p>
+        </CardFooter>
+      </Card>
+    );
+  }
+  return (
+    <div>
+      <h2 className="text-center mb-4ont-bold text-large">Live Video Feed</h2>
+      <div className="flex flex-wrap justify-center gap-4">
+        {devices.map((device, index) => (
+          <div key={index} className="w-1/4 p-2">
+            <Button
+              onClick={() => handleDeviceSelection(device)}
+              color="secondary"
+              size="md"
+            >
+              {device.id} - {device.location}
             </Button>
           </div>
-        </div>
-      )}
-    </Container>
+        ))}
+      </div>
+    </div>
   );
 };
 

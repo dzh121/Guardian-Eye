@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Input, Checkbox, Switch, Button } from "@nextui-org/react";
+import { Input, Switch, Button } from "@nextui-org/react";
 import {
   updateEmail,
   updatePassword,
@@ -9,14 +9,19 @@ import {
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../utils/firebase";
 import { getAuth } from "firebase/auth";
-import { EyeFilledIcon } from "./EyeFilledIcon";
-import { EyeSlashFilledIcon } from "./EyeSlashFilledIcon";
+import { EyeFilledIcon } from "../../utils/EyeFilledIcon";
+import { EyeSlashFilledIcon } from "../../utils/EyeSlashFilledIcon";
+import { collection, getDocs, query, deleteDoc } from "firebase/firestore";
 
 type Camera = {
   id: string;
+  docId: string;
   location: string;
 };
-
+interface MessageProps {
+  message: string;
+  type: "error" | "success";
+}
 const SettingsComponent: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [name, setName] = useState<string>("");
@@ -67,14 +72,16 @@ const SettingsComponent: React.FC = () => {
       // Replace this with your API call or Firebase call to fetch cameras
       const currentUser = getAuth().currentUser;
       if (currentUser) {
-        const token = await currentUser.getIdToken();
+        const uid = currentUser.uid;
+        const devicesQuery = query(collection(db, "cameras", uid, "devices"));
+        const querySnapshot = await getDocs(devicesQuery);
+        const devicesData = querySnapshot.docs.map((doc) => ({
+          id: doc.data().deviceId,
+          docId: doc.id,
+          location: doc.data().location,
+        }));
 
-        const response = await fetch(
-          `http://localhost:8080/devices?token=${token}`
-        );
-
-        const camerasData = await response.json();
-        setCameras(camerasData);
+        setCameras(devicesData);
       } else {
         console.log("User not logged in");
       }
@@ -83,27 +90,23 @@ const SettingsComponent: React.FC = () => {
     fetchCameras();
   }, []);
 
-  const handleRemoveCamera = async (cameraId: string) => {
+  const handleRemoveCamera = async (docId: string) => {
     try {
-      const currentUser = getAuth().currentUser;
-      if (currentUser) {
-        const token = await currentUser.getIdToken();
-        await fetch(`http://localhost:8080/remove-device?token=${token}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id: cameraId }),
-        });
-        setCameras(cameras.filter((camera) => camera.id !== cameraId));
+      const user = getAuth().currentUser;
+      if (user) {
+        const cameraRef = doc(db, "cameras", user.uid, "devices", docId);
+        await deleteDoc(cameraRef);
+        setCameras(cameras.filter((c) => c.docId !== docId));
         setSuccess("Camera removed successfully!");
       } else {
         setError("User not logged in");
       }
-    } catch (error) {
-      setError("Error removing camera");
+    } catch (error: any) {
+      console.error("Error removing camera:", error);
+      setError("Failed to remove camera: " + error.message);
     }
   };
+
   const handleChange =
     (setState: React.Dispatch<React.SetStateAction<string>>) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,13 +209,26 @@ const SettingsComponent: React.FC = () => {
   const inputStyle = {
     fontSize: "1.2em",
   };
-
+  const Message: React.FC<MessageProps> = ({ message, type }) => (
+    <div
+      style={{
+        backgroundColor: type === "error" ? "#ff4d4f" : "#52c41a",
+        color: "white",
+        padding: "10px",
+        borderRadius: "5px",
+        textAlign: "center",
+        marginBottom: "10px",
+      }}
+    >
+      {message}
+    </div>
+  );
   return (
     <div style={centeredStyle}>
-      <h1 style={{ marginBottom: "20px" }}>Settings</h1>
+      <h1 className="font-bold text-large mb-3">Settings</h1>
       {/* Error and success messages */}
-      {error && <p color="danger">{error}</p>}
-      {success && <p color="success">{success}</p>}
+      {error && <Message message={error} type="error" />}
+      {success && <Message message={success} type="success" />}
 
       <form
         onSubmit={handleSubmit}
@@ -223,6 +239,7 @@ const SettingsComponent: React.FC = () => {
           isRequired
           variant="bordered"
           type="string"
+          size="lg"
           label="Name"
           value={name}
           labelPlacement="outside"
@@ -236,6 +253,7 @@ const SettingsComponent: React.FC = () => {
         <Input
           isClearable
           isRequired
+          size="lg"
           variant="bordered"
           type="email"
           label="Email"
@@ -249,6 +267,7 @@ const SettingsComponent: React.FC = () => {
 
         <Input
           isClearable
+          size="lg"
           label="Current Password"
           variant="bordered"
           labelPlacement="outside"
@@ -275,6 +294,7 @@ const SettingsComponent: React.FC = () => {
         />
         <Input
           isClearable
+          size="lg"
           label="New Password"
           variant="bordered"
           labelPlacement="outside"
@@ -302,7 +322,7 @@ const SettingsComponent: React.FC = () => {
 
         {/* Theme Switch */}
         <Switch
-          checked={theme === "dark"}
+          size="lg"
           isSelected={theme === "dark"}
           style={inputStyle}
           onChange={(e) => handleThemeChange(e.target.checked)}
@@ -311,7 +331,7 @@ const SettingsComponent: React.FC = () => {
         </Switch>
 
         <Switch
-          checked={recognizeFaces}
+          size="lg"
           isSelected={recognizeFaces}
           style={inputStyle}
           onChange={(e) => handleRecognizeFaces(e.target.checked)}
@@ -319,7 +339,7 @@ const SettingsComponent: React.FC = () => {
           Recognize Faces
         </Switch>
         <Switch
-          checked={notifications}
+          size="lg"
           isSelected={notifications}
           style={inputStyle}
           onChange={(e) => handleNotifications(e.target.checked)}
@@ -334,10 +354,12 @@ const SettingsComponent: React.FC = () => {
               <p>
                 {camera.id} - {camera.location}
                 <Button
+                  size="lg"
                   style={inputStyle}
                   color="danger"
+                  className="ms-3"
                   type="button" // Important to specify the type
-                  onClick={() => handleRemoveCamera(camera.id)}
+                  onClick={() => handleRemoveCamera(camera.docId)}
                 >
                   Remove
                 </Button>
