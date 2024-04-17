@@ -88,7 +88,7 @@ const SettingsComponent: React.FC = () => {
     };
 
     fetchCameras();
-  }, [user, userRef]);
+  }, []);
 
   const handleRemoveCamera = async (docId: string) => {
     try {
@@ -239,6 +239,7 @@ const SettingsComponent: React.FC = () => {
           isRequired
           variant="bordered"
           type="string"
+          size="lg"
           label="Name"
           value={name}
           labelPlacement="outside"
@@ -252,6 +253,7 @@ const SettingsComponent: React.FC = () => {
         <Input
           isClearable
           isRequired
+          size="lg"
           variant="bordered"
           type="email"
           label="Email"
@@ -265,6 +267,7 @@ const SettingsComponent: React.FC = () => {
 
         <Input
           isClearable
+          size="lg"
           label="Current Password"
           variant="bordered"
           labelPlacement="outside"
@@ -291,6 +294,7 @@ const SettingsComponent: React.FC = () => {
         />
         <Input
           isClearable
+          size="lg"
           label="New Password"
           variant="bordered"
           labelPlacement="outside"
@@ -318,7 +322,7 @@ const SettingsComponent: React.FC = () => {
 
         {/* Theme Switch */}
         <Switch
-          checked={theme === "dark"}
+          size="lg"
           isSelected={theme === "dark"}
           style={inputStyle}
           onChange={(e) => handleThemeChange(e.target.checked)}
@@ -327,7 +331,7 @@ const SettingsComponent: React.FC = () => {
         </Switch>
 
         <Switch
-          checked={recognizeFaces}
+          size="lg"
           isSelected={recognizeFaces}
           style={inputStyle}
           onChange={(e) => handleRecognizeFaces(e.target.checked)}
@@ -335,7 +339,7 @@ const SettingsComponent: React.FC = () => {
           Recognize Faces
         </Switch>
         <Switch
-          checked={notifications}
+          size="lg"
           isSelected={notifications}
           style={inputStyle}
           onChange={(e) => handleNotifications(e.target.checked)}
@@ -350,6 +354,7 @@ const SettingsComponent: React.FC = () => {
               <p>
                 {camera.id} - {camera.location}
                 <Button
+                  size="lg"
                   style={inputStyle}
                   color="danger"
                   className="ms-3"
