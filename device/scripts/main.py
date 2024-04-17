@@ -469,8 +469,7 @@ if __name__ == "__main__":
         setup_firestore_listener(user_id)
 
         device_stream = deviceStream.DeviceStream(user_id, id_token)
-        print(id_token)
-        print("hash", device_stream.get_hash())
+        PORT = device_stream.get_port()
         device_stream.run_server(in_background=True)
 
         main_thread = threading.Thread(target=main)
