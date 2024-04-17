@@ -161,6 +161,7 @@ class DeviceStream:
             flask_thread.start()
         else:
             self.app.run(host="0.0.0.0", port=self.PORT, threaded=True)
+        self.register_device()
 
     def get_port(self):
         return self.PORT

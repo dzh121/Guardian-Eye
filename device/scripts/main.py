@@ -134,7 +134,7 @@ def re_encode_video(filepath, bitrate="1860k"):
     tmp_filepath = filepath + ".tmp.mp4"
 
     command = [
-        "ffmpeg",
+        "../ffmpeg",
         "-y",
         "-i",
         filepath,
@@ -469,8 +469,7 @@ if __name__ == "__main__":
         setup_firestore_listener(user_id)
 
         device_stream = deviceStream.DeviceStream(user_id, id_token)
-        print(id_token)
-        print("hash", device_stream.get_hash())
+        PORT = device_stream.get_port()
         device_stream.run_server(in_background=True)
     except Exception as e:
         print(f"An error occurred: {e}")
