@@ -146,7 +146,7 @@ const LiveVideoComponent: React.FC = () => {
   }
 
   return (
-    <div className="px-4 py-2">
+    <div>
       {selectedDevice ? (
         <Card className="my-4">
           <CardHeader className="flex justify-between items-center p-4">
@@ -179,25 +179,27 @@ const LiveVideoComponent: React.FC = () => {
           <h2 className="text-center text-2xl font-bold my-4">
             Live Video Feed
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
             {devices.map((device, index) => (
-              <Card
-                key={index}
-                className="shadow-lg hover:shadow-xl transition-shadow"
-              >
-                <CardHeader className="text-lg font-bold p-4">
-                  {device.location}
+              <Card key={index} className="flex flex-col justify-between">
+                <CardHeader className="justify-center text-xl font-bold p-4">
+                  {device.id}
                 </CardHeader>
                 <Divider />
-                <CardBody className="p-4">
-                  <Button
-                    color="primary"
-                    size="lg"
-                    onClick={() => handleDeviceSelection(device)}
-                  >
-                    View {device.id}
-                  </Button>
+                <CardBody className="flex flex-col items-center justify-center text-center p-2">
+                  <h1 className="text-lg">{device.location}</h1>
                 </CardBody>
+                <Divider />
+                <CardFooter className="flex items-center justify-center p-2">
+                  <Button
+                    onClick={() => handleDeviceSelection(device)}
+                    color="primary"
+                    variant="solid"
+                    size="lg"
+                  >
+                    Show Live Feed
+                  </Button>
+                </CardFooter>
               </Card>
             ))}
           </div>

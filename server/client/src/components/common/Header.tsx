@@ -31,10 +31,13 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, handleLogout }) => {
   return (
     <div
       className="header"
-      style={{ backgroundColor: "var(--header-background-color)" }}
+      style={{
+        backgroundColor: "var(--header-background-color)",
+      }}
     >
       <Navbar isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen}>
-        <NavbarContent className="hidden sm:flex gap-4" justify="center">
+        {/* Always visible NavbarBrand at the top for all screen sizes */}
+        <NavbarContent className="flex justify-between sm:justify-center">
           <NavbarBrand>
             <img
               src={"icon512.png"}
@@ -43,6 +46,14 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, handleLogout }) => {
             />
             <p className="font-bold text-inherit">Guardian Eye</p>
           </NavbarBrand>
+          <NavbarMenuToggle
+            className="sm:hidden"
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          />
+        </NavbarContent>
+
+        {/* Hidden on small screens, visible on medium and larger screens */}
+        <NavbarContent className="hidden sm:flex gap-6" justify="center">
           {isLoggedIn &&
             menuItems.map((item, index) => (
               <NavbarItem
@@ -88,7 +99,8 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, handleLogout }) => {
           )}
         </NavbarContent>
 
-        <NavbarMenu>
+        {/* Dynamic visibility based on menu open/close state */}
+        <NavbarMenu className="sm:hidden">
           {isLoggedIn &&
             menuItems.map((item, index) => (
               <NavbarMenuItem
@@ -133,37 +145,6 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, handleLogout }) => {
             </>
           )}
         </NavbarMenu>
-
-        {/* <NavbarContent justify="end">
-        <NavbarItem>
-          <Button
-            as={Link}
-            color="warning"
-            href="/register"
-            variant="flat"
-            disabled={isMenuOpen}
-          >
-            Register
-          </Button>
-        </NavbarItem>
-        <NavbarItem>
-          <Button
-            as={Link}
-            color="warning"
-            href="/login"
-            variant="flat"
-            disabled={isMenuOpen}
-          >
-            Log In
-          </Button>
-        </NavbarItem>
-      </NavbarContent> */}
-
-        <NavbarContent className="sm:hidden" justify="start">
-          <NavbarMenuToggle
-            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          />
-        </NavbarContent>
       </Navbar>
     </div>
   );

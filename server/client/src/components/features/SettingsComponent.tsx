@@ -225,7 +225,7 @@ const SettingsComponent: React.FC = () => {
   );
   return (
     <div style={centeredStyle}>
-      <h1 className="font-bold text-large mb-3">Settings</h1>
+      <h1 className="font-bold text-2xl mb-3">Settings</h1>
       {/* Error and success messages */}
       {error && <Message message={error} type="error" />}
       {success && <Message message={success} type="success" />}
