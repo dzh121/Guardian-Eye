@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from "react";
 // import { Card, Button } from "react-bootstrap";
 import { getAuth } from "firebase/auth";
-import { Card, CardHeader, CardBody, Divider, Button } from "@nextui-org/react";
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  Divider,
+  Button,
+  CircularProgress,
+} from "@nextui-org/react";
 // Define types for props and state
 type VideoComponentProps = {
   videoFilename: {
@@ -126,13 +133,15 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           </p>
         )}
         <Divider />
-        <video key={videoStream} width="88%" height="auto" controls>
-          {videoStream ? (
+
+        {videoStream ? (
+          <video key={videoStream} width="88%" height="auto" controls>
             <source src={videoStream} type="video/mp4" />
-          ) : (
-            "Loading video..."
-          )}
-        </video>
+          </video>
+        ) : (
+          <CircularProgress size="lg" aria-label="Loading Video..." />
+        )}
+
         <Divider />
         <Button
           onClick={onGoBack}

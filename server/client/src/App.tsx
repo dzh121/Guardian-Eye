@@ -10,7 +10,6 @@ import { getDoc, doc, DocumentData } from "firebase/firestore";
 
 import { auth, db } from "./utils/firebase";
 import Header from "./components/common/Header";
-// import Sidebar from "./components/common/Sidebar";
 import Footer from "./components/common/Footer";
 import HomeComponent from "./components/features/HomeComponent";
 import LiveVideoComponent from "./components/features/LiveVideoComponent";
@@ -20,10 +19,7 @@ import LoginComponent from "./components/auth/LoginComponent";
 import RegisterComponent from "./components/auth/RegisterComponent";
 import FamiliarFacesComponent from "./components/features/FamiliarFacesComponent";
 
-// Import styles
-import "bootstrap/dist/css/bootstrap.min.css";
-import "@fortawesome/fontawesome-free/css/all.min.css";
-
+import { CircularProgress } from "@nextui-org/react";
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -70,44 +66,54 @@ const App: React.FC = () => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="mb-4">Loading...</p>
+        <CircularProgress size="lg" aria-label="Loading..." />
+      </div>
+    );
   }
 
   return (
     <Router>
-      <Header handleLogout={handleLogout} isLoggedIn={isLoggedIn} />
-      {isLoggedIn ? <p></p> : null}
-      <div className={`main-content`}>
-        <Routes>
-          {isLoggedIn ? (
-            <>
-              <Route path="/home" element={<HomeComponent />} />
-              <Route path="/LiveFeed" element={<LiveVideoComponent />} />
-              <Route
-                path="/SecurityFootage"
-                element={<SecurityFootageComponent />}
-              />
-              <Route path="/settings" element={<SettingsComponent />} />
-              <Route
-                path="/familiarFaces"
-                element={<FamiliarFacesComponent />}
-              />
-              <Route path="/login" element={<Navigate replace to="/home" />} />
-              <Route path="*" element={<Navigate replace to="/home" />} />
-            </>
-          ) : (
-            <>
-              <Route
-                path="/login"
-                element={<LoginComponent onLogin={handleLogin} />}
-              />
-              <Route path="/register" element={<RegisterComponent />} />
-              <Route path="*" element={<Navigate replace to="/login" />} />
-            </>
-          )}
-        </Routes>
+      <div className="app-container">
+        <Header handleLogout={handleLogout} isLoggedIn={isLoggedIn} />
+        {isLoggedIn ? <p></p> : null}
+        <div className={`main-content`}>
+          <Routes>
+            {isLoggedIn ? (
+              <>
+                <Route path="/home" element={<HomeComponent />} />
+                <Route path="/LiveFeed" element={<LiveVideoComponent />} />
+                <Route
+                  path="/SecurityFootage"
+                  element={<SecurityFootageComponent />}
+                />
+                <Route path="/settings" element={<SettingsComponent />} />
+                <Route
+                  path="/familiarFaces"
+                  element={<FamiliarFacesComponent />}
+                />
+                <Route
+                  path="/login"
+                  element={<Navigate replace to="/home" />}
+                />
+                <Route path="*" element={<Navigate replace to="/home" />} />
+              </>
+            ) : (
+              <>
+                <Route
+                  path="/login"
+                  element={<LoginComponent onLogin={handleLogin} />}
+                />
+                <Route path="/register" element={<RegisterComponent />} />
+                <Route path="*" element={<Navigate replace to="/login" />} />
+              </>
+            )}
+          </Routes>
+        </div>
+        <Footer />
       </div>
-      <Footer />
     </Router>
   );
 };

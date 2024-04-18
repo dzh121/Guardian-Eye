@@ -8,6 +8,7 @@ import {
   CardFooter,
   Divider,
   Button,
+  CircularProgress,
 } from "@nextui-org/react";
 import { db } from "../../utils/firebase";
 import { collection, getDocs, query } from "firebase/firestore";
@@ -132,64 +133,76 @@ const LiveVideoComponent: React.FC = () => {
   };
 
   if (isLoading) {
-    return <p className="text-center">Loading...</p>;
-  }
-
-  if (devices.length === 0) {
-    return <p className="text-center">No cameras found</p>;
-  }
-  if (selectedDevice) {
     return (
-      <Card>
-        <CardHeader className="d-flex justify-content-between">
-          <p className="font-bold text-large">
-            {selectedDevice.id} - {selectedDevice.location}
-          </p>
-          <p className="font-bold text-large">{currentTime}</p>
-        </CardHeader>
-
-        <CardBody className="items-center">
-          {isCameraOnline ? (
-            videoUrl && (
-              <img
-                src={streamUrl}
-                alt="Live Video Feed"
-                style={{
-                  width: "1280px",
-                  height: "720px",
-                }}
-              />
-            )
-          ) : (
-            <p className="text-center">Camera not online</p>
-          )}
-        </CardBody>
-        <CardFooter>
-          <div className="text-center">
-            <Button onClick={handleGoBack}>Go Back</Button>
-          </div>
-          <Divider />
-          <p>{currentTime}</p>
-        </CardFooter>
-      </Card>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="mb-4">Loading...</p>
+        <CircularProgress size="lg" aria-label="Loading..." />
+      </div>
     );
   }
+
+  if (!devices.length) {
+    return <p className="text-center">No cameras found</p>;
+  }
+
   return (
-    <div>
-      <h2 className="text-center mb-4ont-bold text-large">Live Video Feed</h2>
-      <div className="flex flex-wrap justify-center gap-4">
-        {devices.map((device, index) => (
-          <div key={index} className="w-1/4 p-2">
-            <Button
-              onClick={() => handleDeviceSelection(device)}
-              color="secondary"
-              size="md"
-            >
-              {device.id} - {device.location}
+    <div className="px-4 py-2">
+      {selectedDevice ? (
+        <Card className="my-4">
+          <CardHeader className="flex justify-between items-center p-4">
+            <p className="text-lg font-bold">
+              {selectedDevice.location} ({selectedDevice.id})
+            </p>
+            <p className="text-sm">{currentTime}</p>
+          </CardHeader>
+          <Divider />
+          <CardBody className="flex flex-col items-center justify-center p-4">
+            {isCameraOnline ? (
+              <img
+                className="max-w-full h-auto"
+                src={streamUrl}
+                alt="Live Video Feed"
+              />
+            ) : (
+              <p className="text-center text-red-500">Camera not online</p>
+            )}
+          </CardBody>
+          <Divider />
+          <CardFooter className="p-4">
+            <Button onClick={handleGoBack} color="danger">
+              Go Back
             </Button>
+          </CardFooter>
+        </Card>
+      ) : (
+        <>
+          <h2 className="text-center text-2xl font-bold my-4">
+            Live Video Feed
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {devices.map((device, index) => (
+              <Card
+                key={index}
+                className="shadow-lg hover:shadow-xl transition-shadow"
+              >
+                <CardHeader className="text-lg font-bold p-4">
+                  {device.location}
+                </CardHeader>
+                <Divider />
+                <CardBody className="p-4">
+                  <Button
+                    color="primary"
+                    size="lg"
+                    onClick={() => handleDeviceSelection(device)}
+                  >
+                    View {device.id}
+                  </Button>
+                </CardBody>
+              </Card>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   );
 };

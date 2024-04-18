@@ -17,7 +17,7 @@ const HomeComponent: React.FC = () => {
         Welcome to Your Surveillance System
       </h2>
 
-      <div className="d-flex flex-wrap justify-content-center">
+      <div className="flex flex-row justify-center">
         {/* Dashboard Card for Live Feed */}
         <Card
           className="max-w-[330px]"

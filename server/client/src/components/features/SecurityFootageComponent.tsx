@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { getAuth } from "firebase/auth";
 import VideoComponent from "./VideoComponent";
-import { Button } from "@nextui-org/react";
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  Divider,
+  Skeleton,
+  Image,
+  CircularProgress,
+  Button,
+} from "@nextui-org/react";
 
 type Video = {
+  deviceID: string;
   deviceLocation: string;
   timeSent: { _seconds: number };
   fileName: string;
@@ -71,7 +82,12 @@ const SecurityFootageComponent: React.FC = () => {
   };
 
   if (fetchingClips) {
-    return <p className="text-center">Fetching clips...</p>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="mb-4">Fetching clips...</p>
+        <CircularProgress size="lg" aria-label="Loading..." />
+      </div>
+    );
   }
 
   if (selectedVideo) {
@@ -81,41 +97,58 @@ const SecurityFootageComponent: React.FC = () => {
       </div>
     );
   }
-  const chunkVideos = (videos: Video[], size: number) => {
-    return videos.reduce((acc, val, i) => {
-      let idx = Math.floor(i / size);
-      let page = acc[idx] || (acc[idx] = []);
-      page.push(val);
 
-      return acc;
-    }, [] as Video[][]);
-  };
-
-  const videoRows = chunkVideos(videos, 4);
   return (
     <div>
-      <h2 className="text-center mb-4 font-bold text-large">
-        Security Footage
-      </h2>
+      <h2 className="text-center text-2xl font-bold mb-4">Security Footage</h2>
       {videos.length === 0 ? (
         <p className="text-center">No clips found</p>
       ) : (
-        videoRows.map((row, rowIndex) => (
-          <div
-            key={rowIndex}
-            className="flex flex-wrap justify-center gap-3 mb-3"
-          >
-            {row.map((video, index) => (
-              <Button
-                key={index}
-                onClick={() => handleVideoSelect(video)}
-                color="secondary"
-              >
-                {video.deviceLocation} - {convertTimestamp(video.timeSent)}
-              </Button>
-            ))}
-          </div>
-        ))
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+          {videos.map((video, index) => (
+            <Card
+              key={index}
+              className="flex flex-col justify-between"
+              style={{ width: "95%" }}
+            >
+              <CardHeader className="flex justify-center p-2">
+                {/* <img
+                  src="live-feed.png"
+                  className="object-cover rounded-lg opacity-100"
+                  width="100%"
+                  height={140}
+                  alt="Live Feed"
+                /> */}
+                <Skeleton className="rounded-lg">
+                  <img
+                    src="live-feed.png"
+                    className="object-cover rounded-lg opacity-100"
+                    width="100%"
+                    height={140}
+                    alt="Live Feed"
+                  />
+                </Skeleton>
+              </CardHeader>
+              <Divider />
+              <CardBody className="flex flex-col items-center justify-center text-center p-2">
+                <h1 className="text-sm font-bold">{video.deviceLocation}</h1>
+                <p className="text-xs">{convertTimestamp(video.timeSent)}</p>
+                <p className="text-xs">ID: {video.deviceID}</p>
+              </CardBody>
+              <Divider />
+              <CardFooter className="flex items-center justify-center p-2">
+                <Button
+                  onClick={() => handleVideoSelect(video)}
+                  color="primary"
+                  variant="solid"
+                  size="sm"
+                >
+                  View Details
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );
