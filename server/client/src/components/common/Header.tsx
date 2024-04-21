@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link as RouterLink } from "react-router-dom"; // Import RouterLink for internal navigation
 import {
   Navbar,
   NavbarBrand,
@@ -39,23 +39,35 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, handleLogout }) => {
         {/* Always visible NavbarBrand at the top for all screen sizes */}
         <NavbarContent className="flex justify-between sm:justify-center">
           <NavbarBrand>
-            <img
-              src={"icon512.png"}
-              alt="App Icon"
-              style={{ height: "30px", marginRight: "10px" }}
-            />
-            <p className="font-bold text-inherit">Guardian Eye</p>
+            <RouterLink
+              to="/home"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              <img
+                src={"icon512.png"}
+                alt="App Icon"
+                style={{ height: "30px", marginRight: "10px" }}
+              />
+              <p className="font-bold text-inherit">Guardian Eye</p>
+            </RouterLink>
           </NavbarBrand>
-          <NavbarMenuToggle
-            className="sm:hidden"
-            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          />
+          {isLoggedIn && (
+            <NavbarMenuToggle
+              className="sm:hidden"
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            />
+          )}
         </NavbarContent>
 
         {/* Hidden on small screens, visible on medium and larger screens */}
-        <NavbarContent className="hidden sm:flex gap-6" justify="center">
-          {isLoggedIn &&
-            menuItems.map((item, index) => (
+        {isLoggedIn && (
+          <NavbarContent className="hidden sm:flex gap-6" justify="center">
+            {menuItems.map((item, index) => (
               <NavbarItem
                 key={index}
                 isActive={currentLocation.pathname === item.path}
@@ -65,44 +77,25 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, handleLogout }) => {
                 </Link>
               </NavbarItem>
             ))}
-          {!isMenuOpen && isLoggedIn && (
-            <NavbarItem>
-              <Button
-                as={Link}
-                color="danger"
-                href="#"
-                variant="flat"
-                onClick={handleLogout}
-              >
-                Log Out
-              </Button>
-            </NavbarItem>
-          )}
-          {!isLoggedIn && (
-            <>
+            {!isMenuOpen && (
               <NavbarItem>
                 <Button
                   as={Link}
-                  color="warning"
-                  href="/register"
+                  color="danger"
+                  href="#"
                   variant="flat"
+                  onClick={handleLogout}
                 >
-                  Register
+                  Log Out
                 </Button>
               </NavbarItem>
-              <NavbarItem>
-                <Button as={Link} color="warning" href="/login" variant="flat">
-                  Log In
-                </Button>
-              </NavbarItem>
-            </>
-          )}
-        </NavbarContent>
-
+            )}
+          </NavbarContent>
+        )}
         {/* Dynamic visibility based on menu open/close state */}
-        <NavbarMenu className="sm:hidden">
-          {isLoggedIn &&
-            menuItems.map((item, index) => (
+        {isLoggedIn && (
+          <NavbarMenu className="sm:hidden">
+            {menuItems.map((item, index) => (
               <NavbarMenuItem
                 key={index}
                 isActive={currentLocation.pathname === item.path}
@@ -112,39 +105,21 @@ const Header: React.FC<HeaderProps> = ({ isLoggedIn, handleLogout }) => {
                 </Link>
               </NavbarMenuItem>
             ))}
-          {isMenuOpen && isLoggedIn && (
-            <NavbarMenuItem>
-              <Button
-                as={Link}
-                color="danger"
-                href="#"
-                variant="flat"
-                onClick={handleLogout}
-              >
-                Log Out
-              </Button>
-            </NavbarMenuItem>
-          )}
-          {!isLoggedIn && (
-            <>
+            {isMenuOpen && (
               <NavbarMenuItem>
                 <Button
                   as={Link}
-                  color="warning"
-                  href="/register"
+                  color="danger"
+                  href="#"
                   variant="flat"
+                  onClick={handleLogout}
                 >
-                  Register
+                  Log Out
                 </Button>
               </NavbarMenuItem>
-              <NavbarMenuItem>
-                <Button as={Link} color="warning" href="/login" variant="flat">
-                  Log In
-                </Button>
-              </NavbarMenuItem>
-            </>
-          )}
-        </NavbarMenu>
+            )}
+          </NavbarMenu>
+        )}
       </Navbar>
     </div>
   );

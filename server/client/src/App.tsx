@@ -15,11 +15,10 @@ import HomeComponent from "./components/features/HomeComponent";
 import LiveVideoComponent from "./components/features/LiveVideoComponent";
 import SecurityFootageComponent from "./components/features/SecurityFootageComponent";
 import SettingsComponent from "./components/features/SettingsComponent";
-import LoginComponent from "./components/auth/LoginComponent";
-import RegisterComponent from "./components/auth/RegisterComponent";
 import FamiliarFacesComponent from "./components/features/FamiliarFacesComponent";
-
+import LoginOrRegisterComponent from "./components/auth/LoginOrRegisterComponent";
 import { CircularProgress } from "@nextui-org/react";
+
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -61,10 +60,6 @@ const App: React.FC = () => {
       });
   };
 
-  const handleLogin = (status: boolean) => {
-    setIsLoggedIn(status);
-  };
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -95,7 +90,7 @@ const App: React.FC = () => {
                   element={<FamiliarFacesComponent />}
                 />
                 <Route
-                  path="/login"
+                  path="/loginOrRegister"
                   element={<Navigate replace to="/home" />}
                 />
                 <Route path="*" element={<Navigate replace to="/home" />} />
@@ -103,11 +98,13 @@ const App: React.FC = () => {
             ) : (
               <>
                 <Route
-                  path="/login"
-                  element={<LoginComponent onLogin={handleLogin} />}
+                  path="/loginOrRegister"
+                  element={<LoginOrRegisterComponent />}
                 />
-                <Route path="/register" element={<RegisterComponent />} />
-                <Route path="*" element={<Navigate replace to="/login" />} />
+                <Route
+                  path="*"
+                  element={<Navigate replace to="/loginOrRegister" />}
+                />
               </>
             )}
           </Routes>
