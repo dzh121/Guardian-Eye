@@ -1,11 +1,10 @@
 import React, { useState, FormEvent } from "react";
 import {
-  getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../../utils/firebase";
 import { useNavigate } from "react-router-dom";
 import {
@@ -13,11 +12,11 @@ import {
   Button,
   Card,
   Spacer,
-  CardHeader,
   CardBody,
   Link,
   Tabs,
   Tab,
+  CardHeader,
 } from "@nextui-org/react";
 import { EyeFilledIcon } from "../../utils/EyeFilledIcon";
 import { EyeSlashFilledIcon } from "../../utils/EyeSlashFilledIcon";
@@ -111,6 +110,11 @@ const LoginOrRegisterComponent: React.FC = () => {
   return (
     <div className="flex justify-center items-center mt-10">
       <Card className="max-w-full w-[420px] min-h-[500px]">
+        <CardHeader className="text-center">
+          <h2 className="text-center text-2xl font-bold">
+            {selected === "login" ? "Login" : "Register"}
+          </h2>
+        </CardHeader>
         <CardBody className="overflow-hidden">
           <Tabs
             fullWidth

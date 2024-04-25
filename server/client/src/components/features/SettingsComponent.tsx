@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Input, Switch, Button } from "@nextui-org/react";
+import {
+  Input,
+  Switch,
+  Button,
+  Tabs,
+  Tab,
+  Card,
+  CardBody,
+  CardHeader,
+  CardFooter,
+  Spacer,
+} from "@nextui-org/react";
 import {
   updateEmail,
   updatePassword,
@@ -35,9 +46,10 @@ const SettingsComponent: React.FC = () => {
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [isVisibleNew, setIsVisibleNew] = useState<boolean>(false);
   const [isVisibleOld, setIsVisibleOld] = useState<boolean>(false);
+  const [selected, setSelected] = useState<string | number>("profile");
 
   const toggleVisibilityNew = () => setIsVisibleNew(!isVisibleNew);
-  const toggleVisibilityOld = () => setIsVisibleOld(!isVisibleNew);
+  const toggleVisibilityOld = () => setIsVisibleOld(!isVisibleOld);
 
   const user = auth.currentUser;
   const userRef = user ? doc(db, "users", user.uid) : null;
@@ -107,27 +119,33 @@ const SettingsComponent: React.FC = () => {
     }
   };
 
+  // const handleChange =
+  //   (setState: React.Dispatch<React.SetStateAction<string>>) =>
+  //   (event: React.ChangeEvent<HTMLInputElement>) => {
+  //     setState(event.target.value);
+  //     setSuccess("");
+  //   };
   const handleChange =
-    (setState: React.Dispatch<React.SetStateAction<string>>) =>
+    <T extends string | boolean>(
+      setState: React.Dispatch<React.SetStateAction<T>>
+    ) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setState(event.target.value);
+      const value =
+        event.target.type === "checkbox"
+          ? event.target.checked
+          : event.target.value;
+      setState(value as T);
       setSuccess("");
     };
 
-  const handleEmailChange = handleChange(setEmail);
-  const handlePasswordChange = handleChange(setPassword);
-  const handleCurrentPasswordChange = handleChange(setCurrentPassword);
-  const handleNameChange = handleChange(setName);
+  const handleEmailChange = handleChange<string>(setEmail);
+  const handlePasswordChange = handleChange<string>(setPassword);
+  const handleCurrentPasswordChange = handleChange<string>(setCurrentPassword);
+  const handleNameChange = handleChange<string>(setName);
 
-  const handleNotifications = (notifications: boolean) => {
-    setNotifications(notifications);
-    setSuccess("");
-  };
+  const handleNotifications = handleChange<boolean>(setNotifications);
+  const handleRecognizeFaces = handleChange<boolean>(setRecognizeFaces);
 
-  const handleRecognizeFaces = (recg: boolean) => {
-    setRecognizeFaces(recg);
-    setSuccess("");
-  };
   const handleThemeChange = (newTheme: boolean) => {
     setTheme(newTheme ? "dark" : "light");
     if (newTheme) {
@@ -137,22 +155,55 @@ const SettingsComponent: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!user) return;
+  const handleTabChange = (key: string | number) => {
+    setSelected(key);
+    setError("");
+    setSuccess("");
+  };
 
-    if (userRef === null) {
+  const handleProfileSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) {
+      setError("No user logged in.");
+      return;
+    }
+
+    if (!userRef) {
       setError("User not found");
       return;
     }
+    try {
+      // Update user's email
+      await updateEmail(user, email);
 
-    // Password length validation
-    if (password && password.length < 6) {
-      setError("Password must be at least 6 characters long");
+      // Update other user details in the database document
+      await updateDoc(userRef, {
+        email,
+        name,
+      });
+
+      // Set success message and clear any previous errors
+      setSuccess("Settings updated successfully!");
+      setError(""); // Clearing any previous error messages
+    } catch (error: any) {
+      console.error("Error updating settings:", error);
+      setError(error.message || "An error occurred");
+      setSuccess(""); // Clearing any previous success messages if the update fails
+    }
+  };
+  const handleSecuritySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) {
+      setError("No user logged in.");
       return;
     }
 
+    if (!userRef) {
+      setError("User not found");
+      return;
+    }
     try {
+      // Re-authenticate user before updating email and password
       if (currentPassword && user.email) {
         const credential = EmailAuthProvider.credential(
           user.email,
@@ -161,50 +212,56 @@ const SettingsComponent: React.FC = () => {
         await reauthenticateWithCredential(user, credential);
       }
 
+      // Update user's password
       if (password && password !== currentPassword) {
         await updatePassword(user, password);
       }
-      // Update email in Firebase Auth
-      await updateEmail(user, email);
 
-      // Update Firestore data (excluding the password)
-      await updateDoc(userRef, {
-        email,
-        name,
-        notifications,
-        recognizeFaces,
-        theme,
-      });
-
-      if (theme === "dark") {
-        document.body.classList.add("dark");
-      } else {
-        document.body.classList.remove("dark");
-      }
+      // Set success message and clear any previous errors
       setSuccess("Settings updated successfully!");
-      setError("");
+      setError(""); // Clearing any previous error messages
       setPassword("");
       setCurrentPassword("");
     } catch (error: any) {
       console.error("Error updating settings:", error);
       setError(error.message || "An error occurred");
-      setSuccess("");
+      setSuccess(""); // Clearing any previous success messages if the update fails
     }
   };
+  const handlePreferencesSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+    if (!user) {
+      setError("No user logged in.");
+      return;
+    }
 
+    if (!userRef) {
+      setError("User not found");
+      return;
+    }
+    try {
+      // Update user preferences in the database document
+      await updateDoc(userRef, {
+        notifications,
+        recognizeFaces,
+        theme,
+      });
+
+      // Set success message and clear any previous errors
+      setSuccess("Settings updated successfully!");
+      setError(""); // Clearing any previous error messages
+    } catch (error: any) {
+      console.error("Error updating settings:", error);
+      setError(error.message || "An error occurred");
+      setSuccess(""); // Clearing any previous success messages if the update fails
+    }
+  };
   // Ensure user is not null before rendering the form
   if (!user) {
     return <p>Loading user data...</p>;
   }
-  const centeredStyle: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
-    padding: "20px",
-    boxSizing: "border-box",
-  };
 
   const inputStyle = {
     fontSize: "1.2em",
@@ -224,157 +281,223 @@ const SettingsComponent: React.FC = () => {
     </div>
   );
   return (
-    <div style={centeredStyle}>
-      <h1 className="font-bold text-2xl mb-3">Settings</h1>
-      {/* Error and success messages */}
-      {error && <Message message={error} type="error" />}
-      {success && <Message message={success} type="success" />}
+    <div className="flex justify-center items-center mt-10">
+      <Card className="max-w-full w-[420px] min-h-[500px]">
+        <CardHeader className="text-center">
+          {/* Titles */}
+          <h2 className="text-2xl font-bold">
+            {selected === "profile" && "Profile"}
+            {selected === "security" && "Security"}
+            {selected === "preferences" && "Preferences"}
+            {selected === "devices" && "Devices"}
+          </h2>
+        </CardHeader>
+        <CardBody>
+          {/* Error and success messages */}
+          {error && <Message message={error} type="error" />}
+          {success && <Message message={success} type="success" />}
 
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col items-center w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4"
-      >
-        {/* Name Input */}
-        <Input
-          isRequired
-          variant="bordered"
-          type="string"
-          size="lg"
-          label="Name"
-          value={name}
-          labelPlacement="outside"
-          placeholder="Enter your name"
-          className="max-w-xs"
-          onChange={handleNameChange}
-          style={inputStyle}
-        />
-
-        {/* Email Input */}
-        <Input
-          isClearable
-          isRequired
-          size="lg"
-          variant="bordered"
-          type="email"
-          label="Email"
-          value={email}
-          labelPlacement="outside"
-          placeholder="Enter your email"
-          className="max-w-xs"
-          onChange={handleEmailChange}
-          style={inputStyle}
-        />
-
-        <Input
-          isClearable
-          size="lg"
-          label="Current Password"
-          variant="bordered"
-          labelPlacement="outside"
-          value={currentPassword}
-          autoComplete="off"
-          onChange={handleCurrentPasswordChange}
-          placeholder="Enter your Current Password"
-          style={inputStyle}
-          endContent={
-            <button
-              className="focus:outline-none"
-              type="button"
-              onClick={toggleVisibilityOld}
-            >
-              {isVisibleOld ? (
-                <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
-              ) : (
-                <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
-              )}
-            </button>
-          }
-          type={isVisibleOld ? "text" : "password"}
-          className="max-w-xs"
-        />
-        <Input
-          isClearable
-          size="lg"
-          label="New Password"
-          variant="bordered"
-          labelPlacement="outside"
-          value={password}
-          autoComplete="off"
-          onChange={handlePasswordChange}
-          placeholder="Enter your New Password"
-          style={inputStyle}
-          endContent={
-            <button
-              className="focus:outline-none"
-              type="button"
-              onClick={toggleVisibilityNew}
-            >
-              {isVisibleNew ? (
-                <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
-              ) : (
-                <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
-              )}
-            </button>
-          }
-          type={isVisibleNew ? "text" : "password"}
-          className="max-w-xs"
-        />
-
-        {/* Theme Switch */}
-        <Switch
-          size="lg"
-          isSelected={theme === "dark"}
-          style={inputStyle}
-          onChange={(e) => handleThemeChange(e.target.checked)}
-        >
-          Dark Mode
-        </Switch>
-
-        <Switch
-          size="lg"
-          isSelected={recognizeFaces}
-          style={inputStyle}
-          onChange={(e) => handleRecognizeFaces(e.target.checked)}
-        >
-          Recognize Faces
-        </Switch>
-        <Switch
-          size="lg"
-          isSelected={notifications}
-          style={inputStyle}
-          onChange={(e) => handleNotifications(e.target.checked)}
-        >
-          Notifications
-        </Switch>
-        {/* Camera List and Remove Button */}
-        <h3 className="mt-4 mb-3">Connected Cameras</h3>
-        {cameras.length > 0 ? (
-          cameras.map((camera) => (
-            <div key={camera.id}>
-              <p>
-                {camera.id} - {camera.location}
-                <Button
+          {/* Tabs */}
+          <Tabs
+            fullWidth
+            size="lg"
+            aria-label="Tabs form"
+            selectedKey={selected}
+            onSelectionChange={handleTabChange}
+          >
+            <Tab key="profile" title="Profile">
+              <Spacer y={2.5} />
+              <form
+                onSubmit={handleProfileSubmit}
+                className="flex flex-col items-center w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4"
+              >
+                {/* Name Input */}
+                <Input
+                  isRequired
+                  variant="bordered"
+                  type="string"
                   size="lg"
+                  label="Name"
+                  value={name}
+                  labelPlacement="outside"
+                  placeholder="Enter your name"
+                  className="max-w-xs"
+                  onChange={handleNameChange}
                   style={inputStyle}
-                  color="danger"
-                  className="ms-3"
-                  type="button" // Important to specify the type
-                  onClick={() => handleRemoveCamera(camera.docId)}
-                >
-                  Remove
-                </Button>
-              </p>
-            </div>
-          ))
-        ) : (
-          <p>No cameras connected</p>
-        )}
+                />
 
-        {/* Submit Button */}
-        <Button type="submit" className="mt-3" style={inputStyle}>
-          Save Changes
-        </Button>
-      </form>
+                {/* Email Input */}
+                <Input
+                  isRequired
+                  size="lg"
+                  variant="bordered"
+                  type="email"
+                  label="Email"
+                  value={email}
+                  labelPlacement="outside"
+                  placeholder="Enter your email"
+                  className="max-w-xs"
+                  onChange={handleEmailChange}
+                  style={inputStyle}
+                />
+                <Button type="submit" className="mt-3" style={inputStyle}>
+                  Save Changes
+                </Button>
+              </form>
+            </Tab>
+            <Tab key="security" title="Security">
+              <Spacer y={2.5} />
+              <form
+                onSubmit={handleSecuritySubmit}
+                className="flex flex-col items-center w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4"
+              >
+                {/* Current Password Inputs */}
+                <Input
+                  isRequired
+                  size="lg"
+                  label="Current Password"
+                  variant="bordered"
+                  labelPlacement="outside"
+                  value={currentPassword}
+                  autoComplete="off"
+                  onChange={handleCurrentPasswordChange}
+                  placeholder="Enter your Current Password"
+                  style={inputStyle}
+                  endContent={
+                    <button
+                      className="focus:outline-none"
+                      type="button"
+                      onClick={toggleVisibilityOld}
+                    >
+                      {isVisibleOld ? (
+                        <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                      ) : (
+                        <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                      )}
+                    </button>
+                  }
+                  type={isVisibleOld ? "text" : "password"}
+                  className="max-w-xs"
+                />
+
+                {/* New Password Inputs */}
+                <Input
+                  isRequired
+                  size="lg"
+                  label="New Password"
+                  variant="bordered"
+                  labelPlacement="outside"
+                  value={password}
+                  autoComplete="off"
+                  onChange={handlePasswordChange}
+                  placeholder="Enter your New Password"
+                  style={inputStyle}
+                  endContent={
+                    <button
+                      className="focus:outline-none"
+                      type="button"
+                      onClick={toggleVisibilityNew}
+                    >
+                      {isVisibleNew ? (
+                        <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                      ) : (
+                        <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                      )}
+                    </button>
+                  }
+                  type={isVisibleNew ? "text" : "password"}
+                  className="max-w-xs"
+                />
+                <Button type="submit" className="mt-3" style={inputStyle}>
+                  Save Changes
+                </Button>
+              </form>
+            </Tab>
+            <Tab key="preferences" title="Preferences">
+              <Spacer y={2.5} />
+              <form
+                onSubmit={handlePreferencesSubmit}
+                className="flex flex-col items-center w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4"
+              >
+                {/* Theme Switch */}
+                <Switch
+                  size="lg"
+                  isSelected={theme === "dark"}
+                  style={inputStyle}
+                  onChange={(e) => handleThemeChange(e.target.checked)}
+                >
+                  Dark Mode
+                </Switch>
+
+                {/* Recognize Faces Input  */}
+                <Switch
+                  size="lg"
+                  isSelected={recognizeFaces}
+                  style={inputStyle}
+                  onChange={handleRecognizeFaces}
+                >
+                  Recognize Faces
+                </Switch>
+
+                {/* Notifications Input */}
+                <Switch
+                  size="lg"
+                  isSelected={notifications}
+                  style={inputStyle}
+                  onChange={handleNotifications}
+                >
+                  Notifications
+                </Switch>
+                <Button type="submit" className="mt-3" style={inputStyle}>
+                  Save Changes
+                </Button>
+              </form>
+            </Tab>
+            <Tab key="devices" title="Devices">
+              <Spacer y={2.5} />
+              <h3 className="text-xl mt-4 mb-3">Connected Cameras</h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "20px",
+                  justifyContent: "center",
+                  maxWidth: "420px",
+                }}
+              >
+                {cameras.length > 0 ? (
+                  cameras.map((camera) => (
+                    <div
+                      key={camera.id}
+                      style={{ width: "calc(50% - 10px)", maxWidth: "100%" }}
+                    >
+                      <Card>
+                        <CardBody>
+                          <b>
+                            {camera.id} - {camera.location}
+                          </b>
+                          <Button
+                            size="sm"
+                            color="danger"
+                            className="mt-4"
+                            onClick={() => handleRemoveCamera(camera.docId)}
+                          >
+                            Remove
+                          </Button>
+                        </CardBody>
+                      </Card>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-red-500">
+                    No cameras connected
+                  </p>
+                )}
+              </div>
+            </Tab>
+          </Tabs>
+        </CardBody>
+      </Card>
     </div>
   );
 };
