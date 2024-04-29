@@ -9,9 +9,11 @@ import {
   Divider,
   Button,
   CircularProgress,
+  Pagination,
 } from "@nextui-org/react";
 import { db } from "../../utils/firebase";
 import { collection, getDocs, query } from "firebase/firestore";
+import { useWindowSize } from "../../utils/useWindowSize";
 
 type Device = {
   id: string;
@@ -20,15 +22,19 @@ type Device = {
 };
 
 const LiveVideoComponent: React.FC = () => {
-  const [devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string>("");
   const [isCameraOnline, setIsCameraOnline] = useState<boolean>(true);
+  const [streamUrl, setStreamUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<string>(
     moment().format("DD/MM/YYYY, HH:mm:ss")
   );
-  const [streamUrl, setStreamUrl] = useState<string>("");
+  const [devices, setDevices] = useState<Device[]>([]);
+
+  const windowSize = useWindowSize();
+  const [itemsPerPage, setItemsPerPage] = useState(windowSize.isLarge ? 8 : 4);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Update currentTime every second
   useEffect(() => {
@@ -55,6 +61,7 @@ const LiveVideoComponent: React.FC = () => {
             url: doc.data().videoUrl,
           }));
           setDevices(devicesData);
+          setTotalPages(Math.ceil(devicesData.length / itemsPerPage));
         } catch (error) {
           console.error("Error fetching devices:", error);
           setDevices([]);
@@ -66,8 +73,7 @@ const LiveVideoComponent: React.FC = () => {
       }
     };
     fetchDevices();
-  }, []);
-
+  }, [itemsPerPage]);
   // Fetch video URL
   useEffect(() => {
     const checkCameraStatusAndSetUrl = async () => {
@@ -85,7 +91,6 @@ const LiveVideoComponent: React.FC = () => {
             // Check if the camera server is reachable
             const response = await fetch(selectedDevice.url, { headers });
             if (response.ok) {
-              setVideoUrl(selectedDevice.url);
               setIsCameraOnline(true);
             } else {
               throw new Error("Camera server not reachable");
@@ -100,10 +105,6 @@ const LiveVideoComponent: React.FC = () => {
         setIsLoading(false);
       }
     };
-
-    checkCameraStatusAndSetUrl();
-  }, [selectedDevice]);
-  useEffect(() => {
     const fetchStreamUrl = async () => {
       if (selectedDevice) {
         const currentUser = getAuth().currentUser;
@@ -119,6 +120,7 @@ const LiveVideoComponent: React.FC = () => {
     };
 
     fetchStreamUrl();
+    checkCameraStatusAndSetUrl();
   }, [selectedDevice]);
 
   // Handling device selection
@@ -128,9 +130,15 @@ const LiveVideoComponent: React.FC = () => {
 
   const handleGoBack = () => {
     setSelectedDevice(null);
-    setVideoUrl("");
+    setStreamUrl("");
     setIsCameraOnline(true);
   };
+
+  // Pagination
+  const currentItems = devices.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   if (isLoading) {
     return (
@@ -175,35 +183,52 @@ const LiveVideoComponent: React.FC = () => {
           </CardFooter>
         </Card>
       ) : (
-        <>
-          <h2 className="text-center text-2xl font-bold my-4">
-            Live Video Feed
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-            {devices.map((device, index) => (
-              <Card key={index} className="flex flex-col justify-between">
-                <CardHeader className="justify-center text-xl font-bold p-4">
-                  {device.id}
-                </CardHeader>
-                <Divider />
-                <CardBody className="flex flex-col items-center justify-center text-center p-2">
-                  <h1 className="text-lg">{device.location}</h1>
-                </CardBody>
-                <Divider />
-                <CardFooter className="flex items-center justify-center p-2">
-                  <Button
-                    onClick={() => handleDeviceSelection(device)}
-                    color="primary"
-                    variant="solid"
-                    size="lg"
-                  >
-                    Show Live Feed
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+        <div className="flex flex-col h-full w-full">
+          <div className="flex-grow">
+            <h2 className="text-center text-2xl font-bold my-4">
+              Live Video Feed
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 px-4 mb-4">
+              {currentItems.map((device, index) => (
+                <Card
+                  key={index}
+                  className="flex flex-col justify-between rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
+                >
+                  <CardHeader className="justify-center text-xl font-bold p-4 rounded-t-lg">
+                    {device.id}
+                  </CardHeader>
+                  <Divider />
+                  <CardBody className="flex flex-col items-center justify-center text-center p-4">
+                    <h1 className="text-lg font-semibold">{device.location}</h1>
+                  </CardBody>
+                  <Divider />
+                  <CardFooter className="flex items-center justify-center p-4 rounded-b-lg">
+                    <Button
+                      onClick={() => handleDeviceSelection(device)}
+                      color="primary"
+                      variant="solid"
+                      size="lg"
+                    >
+                      Show Live Feed
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
           </div>
-        </>
+          <div className="w-full flex justify-center pb-4">
+            <Pagination
+              showControls
+              total={totalPages}
+              initialPage={1}
+              page={currentPage}
+              onChange={(page) => setCurrentPage(page)}
+              size="lg"
+              loop
+              showShadow
+            />
+          </div>
+        </div>
       )}
     </div>
   );

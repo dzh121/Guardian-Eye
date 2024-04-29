@@ -73,7 +73,6 @@ const App: React.FC = () => {
     <Router>
       <div className="app-container">
         <Header handleLogout={handleLogout} isLoggedIn={isLoggedIn} />
-        {isLoggedIn ? <p></p> : null}
         <div className={`main-content`}>
           <Routes>
             {isLoggedIn ? (
