@@ -143,8 +143,7 @@ const LiveVideoComponent: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="mb-4">Loading...</p>
-        <CircularProgress size="lg" aria-label="Loading..." />
+        <CircularProgress size="lg" label="Loading..." />
       </div>
     );
   }

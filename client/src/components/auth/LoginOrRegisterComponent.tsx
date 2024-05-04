@@ -18,8 +18,8 @@ import {
   Tab,
   CardHeader,
 } from "@nextui-org/react";
-import { EyeFilledIcon } from "../../utils/EyeFilledIcon";
-import { EyeSlashFilledIcon } from "../../utils/EyeSlashFilledIcon";
+import { EyeFilledIcon } from "../../utils/icons/EyeFilledIcon";
+import { EyeSlashFilledIcon } from "../../utils/icons/EyeSlashFilledIcon";
 
 interface MessageProps {
   message: string;

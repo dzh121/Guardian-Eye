@@ -139,7 +139,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             <source src={videoStream} type="video/mp4" />
           </video>
         ) : (
-          <CircularProgress size="lg" aria-label="Loading Video..." />
+          <CircularProgress size="lg" label="Loading Video..." />
         )}
 
         <Divider />

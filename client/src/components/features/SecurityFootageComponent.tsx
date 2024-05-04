@@ -84,8 +84,7 @@ const SecurityFootageComponent: React.FC = () => {
   if (fetchingClips) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="mb-4">Fetching clips...</p>
-        <CircularProgress size="lg" aria-label="Loading..." />
+        <CircularProgress size="lg" label="Fetching clips..." />
       </div>
     );
   }

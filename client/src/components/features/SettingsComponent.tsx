@@ -8,7 +8,8 @@ import {
   Card,
   CardBody,
   CardHeader,
-  CardFooter,
+  Pagination,
+  CircularProgress,
   Spacer,
 } from "@nextui-org/react";
 import {
@@ -20,8 +21,8 @@ import {
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../utils/firebase";
 import { getAuth } from "firebase/auth";
-import { EyeFilledIcon } from "../../utils/EyeFilledIcon";
-import { EyeSlashFilledIcon } from "../../utils/EyeSlashFilledIcon";
+import { EyeFilledIcon } from "../../utils/icons/EyeFilledIcon";
+import { EyeSlashFilledIcon } from "../../utils/icons/EyeSlashFilledIcon";
 import { collection, getDocs, query, deleteDoc } from "firebase/firestore";
 
 type Camera = {
@@ -47,6 +48,9 @@ const SettingsComponent: React.FC = () => {
   const [isVisibleNew, setIsVisibleNew] = useState<boolean>(false);
   const [isVisibleOld, setIsVisibleOld] = useState<boolean>(false);
   const [selected, setSelected] = useState<string | number>("profile");
+  const itemsPerPage = 4;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const toggleVisibilityNew = () => setIsVisibleNew(!isVisibleNew);
   const toggleVisibilityOld = () => setIsVisibleOld(!isVisibleOld);
@@ -55,51 +59,42 @@ const SettingsComponent: React.FC = () => {
   const userRef = user ? doc(db, "users", user.uid) : null;
 
   useEffect(() => {
-    if (user) {
-      if (userRef) {
-        getDoc(userRef).then((docSnap) => {
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-            // Set the states with fetched data or default values
-            setEmail(userData.email || "");
-            setName(userData.name || "");
-            setNotifications(
-              userData.notifications !== undefined
-                ? userData.notifications
-                : false
-            );
-            console.log(userData.theme);
-            console.log(userData.theme || "light");
-            setTheme(userData.theme || "light");
-            setRecognizeFaces(
-              userData.recognizeFaces !== undefined
-                ? userData.recognizeFaces
-                : false
-            );
-          }
-        });
-      }
-    }
-    const fetchCameras = async () => {
-      // Replace this with your API call or Firebase call to fetch cameras
-      const currentUser = getAuth().currentUser;
-      if (currentUser) {
-        const uid = currentUser.uid;
-        const devicesQuery = query(collection(db, "cameras", uid, "devices"));
-        const querySnapshot = await getDocs(devicesQuery);
-        const devicesData = querySnapshot.docs.map((doc) => ({
+    const fetchData = async () => {
+      if (user) {
+        if (!userRef) {
+          setError("User not found");
+          return;
+        }
+        const userData = await getDoc(userRef);
+        if (userData.exists()) {
+          const data = userData.data();
+          setEmail(data.email || "");
+          setName(data.name || "");
+          setNotifications(
+            data.notifications !== undefined ? data.notifications : false
+          );
+          setTheme(data.theme || "light");
+          setRecognizeFaces(
+            data.recognizeFaces !== undefined ? data.recognizeFaces : false
+          );
+        }
+
+        // Fetch cameras associated with the user
+        const camerasData = await getDocs(
+          query(collection(db, "cameras", user.uid, "devices"))
+        );
+        const fetchedCameras = camerasData.docs.map((doc) => ({
           id: doc.data().deviceId,
           docId: doc.id,
           location: doc.data().location,
         }));
-
-        setCameras(devicesData);
+        setCameras(fetchedCameras);
+        setTotalPages(Math.ceil(fetchedCameras.length / itemsPerPage));
       } else {
         console.log("User not logged in");
       }
     };
-
-    fetchCameras();
+    fetchData();
   }, []);
 
   const handleRemoveCamera = async (docId: string) => {
@@ -119,22 +114,14 @@ const SettingsComponent: React.FC = () => {
     }
   };
 
-  // const handleChange =
-  //   (setState: React.Dispatch<React.SetStateAction<string>>) =>
-  //   (event: React.ChangeEvent<HTMLInputElement>) => {
-  //     setState(event.target.value);
-  //     setSuccess("");
-  //   };
   const handleChange =
-    <T extends string | boolean>(
-      setState: React.Dispatch<React.SetStateAction<T>>
-    ) =>
+    <T,>(setter: React.Dispatch<React.SetStateAction<T>>) =>
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const value =
         event.target.type === "checkbox"
           ? event.target.checked
           : event.target.value;
-      setState(value as T);
+      setter(value as T);
       setSuccess("");
     };
 
@@ -142,17 +129,12 @@ const SettingsComponent: React.FC = () => {
   const handlePasswordChange = handleChange<string>(setPassword);
   const handleCurrentPasswordChange = handleChange<string>(setCurrentPassword);
   const handleNameChange = handleChange<string>(setName);
-
-  const handleNotifications = handleChange<boolean>(setNotifications);
-  const handleRecognizeFaces = handleChange<boolean>(setRecognizeFaces);
+  const handleNotificationsChange = handleChange<boolean>(setNotifications);
+  const handleRecognizeFacesChange = handleChange<boolean>(setRecognizeFaces);
 
   const handleThemeChange = (newTheme: boolean) => {
     setTheme(newTheme ? "dark" : "light");
-    if (newTheme) {
-      document.body.classList.add("dark");
-    } else {
-      document.body.classList.remove("dark");
-    }
+    document.body.classList.toggle("dark", newTheme);
   };
 
   const handleTabChange = (key: string | number) => {
@@ -163,47 +145,29 @@ const SettingsComponent: React.FC = () => {
 
   const handleProfileSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) {
-      setError("No user logged in.");
+    if (!user || !userRef) {
+      setError("User not logged in or not found.");
       return;
     }
 
-    if (!userRef) {
-      setError("User not found");
-      return;
-    }
     try {
-      // Update user's email
       await updateEmail(user, email);
-
-      // Update other user details in the database document
-      await updateDoc(userRef, {
-        email,
-        name,
-      });
-
-      // Set success message and clear any previous errors
+      await updateDoc(userRef, { email, name });
       setSuccess("Settings updated successfully!");
-      setError(""); // Clearing any previous error messages
+      setError("");
     } catch (error: any) {
-      console.error("Error updating settings:", error);
-      setError(error.message || "An error occurred");
-      setSuccess(""); // Clearing any previous success messages if the update fails
+      console.error("Error updating profile settings:", error);
+      setError(error.message);
     }
   };
   const handleSecuritySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) {
-      setError("No user logged in.");
+    if (!user || !userRef) {
+      setError("User not logged in or not found.");
       return;
     }
 
-    if (!userRef) {
-      setError("User not found");
-      return;
-    }
     try {
-      // Re-authenticate user before updating email and password
       if (currentPassword && user.email) {
         const credential = EmailAuthProvider.credential(
           user.email,
@@ -211,56 +175,50 @@ const SettingsComponent: React.FC = () => {
         );
         await reauthenticateWithCredential(user, credential);
       }
-
-      // Update user's password
       if (password && password !== currentPassword) {
         await updatePassword(user, password);
+        setPassword(""); // Reset password field
+        setCurrentPassword(""); // Reset current password field
       }
-
-      // Set success message and clear any previous errors
-      setSuccess("Settings updated successfully!");
-      setError(""); // Clearing any previous error messages
-      setPassword("");
-      setCurrentPassword("");
+      setError("");
+      setSuccess("Security settings updated successfully!");
     } catch (error: any) {
-      console.error("Error updating settings:", error);
-      setError(error.message || "An error occurred");
-      setSuccess(""); // Clearing any previous success messages if the update fails
+      console.error("Error updating security settings:", error);
+      setError(error.message);
     }
   };
   const handlePreferencesSubmit = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
-    if (!user) {
-      setError("No user logged in.");
+    if (!user || !userRef) {
+      setError("User not logged in or not found.");
       return;
     }
 
-    if (!userRef) {
-      setError("User not found");
-      return;
-    }
     try {
-      // Update user preferences in the database document
-      await updateDoc(userRef, {
-        notifications,
-        recognizeFaces,
-        theme,
-      });
-
-      // Set success message and clear any previous errors
-      setSuccess("Settings updated successfully!");
-      setError(""); // Clearing any previous error messages
+      await updateDoc(userRef, { notifications, recognizeFaces, theme });
+      setSuccess("Preferences updated successfully!");
+      setError("");
     } catch (error: any) {
-      console.error("Error updating settings:", error);
-      setError(error.message || "An error occurred");
-      setSuccess(""); // Clearing any previous success messages if the update fails
+      console.error("Error updating preferences:", error);
+      setError(error.message);
     }
   };
+
+  // Pagination
+  const currentItems = cameras.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   // Ensure user is not null before rendering the form
   if (!user) {
-    return <p>Loading user data...</p>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <CircularProgress size="lg" label="Loading user data..." />
+      </div>
+    );
   }
 
   const inputStyle = {
@@ -434,7 +392,7 @@ const SettingsComponent: React.FC = () => {
                   size="lg"
                   isSelected={recognizeFaces}
                   style={inputStyle}
-                  onChange={handleRecognizeFaces}
+                  onChange={handleRecognizeFacesChange}
                 >
                   Recognize Faces
                 </Switch>
@@ -444,7 +402,7 @@ const SettingsComponent: React.FC = () => {
                   size="lg"
                   isSelected={notifications}
                   style={inputStyle}
-                  onChange={handleNotifications}
+                  onChange={handleNotificationsChange}
                 >
                   Notifications
                 </Switch>
@@ -455,44 +413,58 @@ const SettingsComponent: React.FC = () => {
             </Tab>
             <Tab key="devices" title="Devices">
               <Spacer y={2.5} />
-              <h3 className="text-xl mt-4 mb-3">Connected Cameras</h3>
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "20px",
-                  justifyContent: "center",
-                  maxWidth: "420px",
-                }}
-              >
-                {cameras.length > 0 ? (
-                  cameras.map((camera) => (
-                    <div
-                      key={camera.id}
-                      style={{ width: "calc(50% - 10px)", maxWidth: "100%" }}
-                    >
-                      <Card>
-                        <CardBody>
-                          <b>
-                            {camera.id} - {camera.location}
-                          </b>
-                          <Button
-                            size="sm"
-                            color="danger"
-                            className="mt-4"
-                            onClick={() => handleRemoveCamera(camera.docId)}
-                          >
-                            Remove
-                          </Button>
-                        </CardBody>
-                      </Card>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center text-red-500">
-                    No cameras connected
-                  </p>
-                )}
+              <div className="flex flex-col justify-center">
+                <h3 className="text-xl mt-4 mb-3">Connected Cameras</h3>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "20px",
+                    justifyContent: "center",
+                    maxWidth: "420px",
+                  }}
+                >
+                  {cameras.length > 0 ? (
+                    currentItems.map((camera) => (
+                      <div
+                        key={camera.id}
+                        style={{ width: "calc(50% - 10px)", maxWidth: "100%" }}
+                      >
+                        <Card>
+                          <CardBody>
+                            <b>
+                              {camera.id} - {camera.location}
+                            </b>
+                            <Button
+                              size="sm"
+                              color="danger"
+                              className="mt-4"
+                              onClick={() => handleRemoveCamera(camera.docId)}
+                            >
+                              Remove
+                            </Button>
+                          </CardBody>
+                        </Card>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-center text-red-500">
+                      No cameras connected
+                    </p>
+                  )}
+                  <div className="w-full flex justify-center pb-4">
+                    <Pagination
+                      showControls
+                      total={totalPages}
+                      initialPage={1}
+                      page={currentPage}
+                      onChange={(page) => setCurrentPage(page)}
+                      size="lg"
+                      loop
+                      showShadow
+                    />
+                  </div>
+                </div>
               </div>
             </Tab>
           </Tabs>

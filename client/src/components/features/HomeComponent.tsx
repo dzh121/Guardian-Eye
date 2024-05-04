@@ -17,10 +17,10 @@ const HomeComponent: React.FC = () => {
         Welcome to Your Surveillance System
       </h2>
 
-      <div className="flex flex-row justify-center">
+      <div className="flex flex-col sm:flex-row justify-center">
         {/* Dashboard Card for Live Feed */}
         <Card
-          className="max-w-[330px]"
+          className="w-full sm:max-w-[330px] m-2"
           style={{
             margin: "10px",
           }}
@@ -55,7 +55,7 @@ const HomeComponent: React.FC = () => {
         </Card>
         {/* Dashboard Card for Camera Detection */}
         <Card
-          className="max-w-[330px]"
+          className="w-full sm:max-w-[330px] m-2"
           style={{
             margin: "10px",
           }}
@@ -91,7 +91,7 @@ const HomeComponent: React.FC = () => {
 
         {/* Dashboard Card for familiar faces */}
         <Card
-          className="max-w-[330px]"
+          className="w-full sm:max-w-[330px] m-2"
           style={{
             margin: "10px",
           }}
@@ -112,7 +112,7 @@ const HomeComponent: React.FC = () => {
             <p>Explore and Manage Your Familiar Faces List</p>
           </CardBody>
           <Divider />
-          <CardFooter className="flex items-center justify-center">
+          <CardFooter className="flex items-center justify-center ">
             <Button
               href="/familiarFaces"
               as={Link}
@@ -127,7 +127,7 @@ const HomeComponent: React.FC = () => {
 
         {/* Dashboard Card for Settings */}
         <Card
-          className="max-w-[330px]"
+          className="w-full sm:max-w-[330px] m-2"
           style={{
             margin: "10px",
           }}
