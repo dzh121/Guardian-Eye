@@ -18,6 +18,8 @@ type Video = {
   deviceLocation: string;
   timeSent: { _seconds: number };
   fileName: string;
+  eventID: string;
+  imageSrc?: string;
 };
 
 const SecurityFootageComponent: React.FC = () => {
@@ -25,37 +27,97 @@ const SecurityFootageComponent: React.FC = () => {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [fetchingClips, setFetchingClips] = useState<boolean>(true);
 
-  useEffect(() => {
-    const fetchUserToken = async () => {
-      const user = getAuth().currentUser;
-      return user ? await user.getIdToken() : null;
-    };
+  // useEffect(() => {
+  //   const fetchUserToken = async () => {
+  //     const user = getAuth().currentUser;
+  //     return user ? await user.getIdToken() : null;
+  //   };
 
-    const fetchVideos = async () => {
-      try {
-        const idToken = await fetchUserToken();
-        const response = await fetch("http://localhost:3000/videos", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-          },
-        });
+  //   const fetchVideos = async () => {
+  //     try {
+  //       const idToken = await fetchUserToken();
+  //       const response = await fetch("http://localhost:3000/videos", {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${idToken}`,
+  //         },
+  //       });
 
-        if (!response.ok) {
-          throw new Error("Network response was not ok.");
-        }
+  //       if (!response.ok) {
+  //         throw new Error("Network response was not ok.");
+  //       }
 
-        const data = await response.json();
-        setVideos(data.videos);
-        setFetchingClips(false);
-      } catch (error) {
-        console.error("Error fetching videos: ", error);
-        setFetchingClips(false);
+  //       const data = await response.json();
+
+  //       setVideos(data.videos);
+  //       console.log(data.videos);
+  //       setFetchingClips(false);
+  //     } catch (error) {
+  //       console.error("Error fetching videos: ", error);
+  //       setFetchingClips(false);
+  //     }
+  //   };
+
+  //   fetchVideos();
+  // }, []);
+
+  const fetchImageForVideo = async (video: Video, idToken: string) => {
+    console.log("Fetching image for video with eventID:", video.eventID);
+    const response = await fetch(
+      `http://localhost:3000/image?eventID=${video.eventID}`,
+      {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
       }
+    );
+
+    if (response.ok) {
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    } else {
+      console.error(
+        "Failed to fetch image for video with eventID:",
+        video.eventID
+      );
+      return "";
+    }
+  };
+
+  useEffect(() => {
+    const fetchVideosAndImages = async () => {
+      const user = getAuth().currentUser;
+      const idToken = user ? await user.getIdToken() : null;
+      if (!idToken) {
+        console.error("User not logged in.");
+        setFetchingClips(false);
+        return;
+      }
+      const response = await fetch("http://localhost:3000/videos", {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok.");
+      }
+
+      const data = await response.json();
+      const videoPromises = data.videos.map(async (video: Video) => {
+        if (!video.eventID) {
+          return video;
+        }
+        const imageSrc = await fetchImageForVideo(video, idToken);
+        return { ...video, imageSrc };
+      });
+
+      Promise.all(videoPromises).then(setVideos);
+      setFetchingClips(false);
     };
 
-    fetchVideos();
+    fetchVideosAndImages();
   }, []);
 
   const handleVideoSelect = (video: Video) => {
@@ -111,22 +173,25 @@ const SecurityFootageComponent: React.FC = () => {
               style={{ width: "95%" }}
             >
               <CardHeader className="flex justify-center p-2">
-                {/* <img
-                  src="live-feed.png"
-                  className="object-cover rounded-lg opacity-100"
-                  width="100%"
-                  height={140}
-                  alt="Live Feed"
-                /> */}
-                <Skeleton className="rounded-lg">
-                  <img
-                    src="live-feed.png"
+                {video.eventID ? (
+                  <Image
+                    src={video.imageSrc}
                     className="object-cover rounded-lg opacity-100"
                     width="100%"
-                    height={140}
+                    height="100%"
                     alt="Live Feed"
                   />
-                </Skeleton>
+                ) : (
+                  <Skeleton className="rounded-lg">
+                    <img
+                      src="live-feed.png"
+                      className="object-cover rounded-lg opacity-100"
+                      width="100%"
+                      height={140}
+                      alt="Live Feed"
+                    />
+                  </Skeleton>
+                )}
               </CardHeader>
               <Divider />
               <CardBody className="flex flex-col items-center justify-center text-center p-2">

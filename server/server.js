@@ -20,6 +20,7 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 if (process.env.NODE_ENV === "development") {
+  app.set("trust proxy", "127.0.0.1");
   corsOptions.origin = "http://localhost:3001";
 } else {
   corsOptions.origin = "http://localhost:3000";
@@ -27,6 +28,9 @@ if (process.env.NODE_ENV === "development") {
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
+  keyGenerator: (req) => {
+    return req.ip;
+  },
   max: 100,
 });
 
@@ -35,12 +39,25 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(CLIENT_BUILD_PATH));
-
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    error: {
+      message: err.message || "Internal Server Error",
+    },
+  });
+});
 app.use(limiter);
 
 // Token verification middleware
 const verifyToken = require("./utils/verifyToken");
-const { Console } = require("console");
+
+// Load routes
+const verifyTokenRoute = require("./routes/verifyTokenRoute");
+const uploadRoute = require("./routes/uploadRoute");
+const videosRoute = require("./routes/videosRoute");
+const serveVideos = require("./utils/serveVideos");
+const serveImages = require("./utils/serveImages");
 
 // Routes
 app.get("/protected", verifyToken, (req, res) => {
@@ -48,24 +65,21 @@ app.get("/protected", verifyToken, (req, res) => {
 });
 
 // Verify token route
-app.use("/verify-token", require("./routes/verifyTokenRoute"));
+app.use("/verify-token", verifyTokenRoute);
 
 // File upload setup
 const upload = multer({ storage: require("./utils/fileStorage") });
 
 // File upload route
-app.post(
-  "/upload",
-  verifyToken,
-  upload.single("file"),
-  require("./routes/uploadRoute")
-);
+app.post("/upload", verifyToken, upload.single("file"), uploadRoute);
 
 // Video retrieval route
-app.get("/videos", verifyToken, require("./routes/videosRoute"));
+app.use("/videos", verifyToken, videosRoute);
 
-// Video serving middleware
-app.use("/video", verifyToken, require("./utils/serveVideos"));
+// Video and Images serving middleware
+app.use("/video", verifyToken, serveVideos);
+
+app.use("/image", verifyToken, serveImages);
 
 // Serve React App - handle any other requests to index.html
 if (process.env.NODE_ENV === "production") {

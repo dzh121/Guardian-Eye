@@ -83,7 +83,7 @@ const LiveVideoComponent: React.FC = () => {
           const currentUser = getAuth().currentUser;
           if (currentUser) {
             const token = await currentUser.getIdToken();
-
+            console.log("Token:", token);
             const headers = {
               Authorization: `Bearer ${token}`,
             };

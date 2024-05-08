@@ -7,7 +7,6 @@ module.exports = async (req, res) => {
     const videosCollectionRef = db.collection(`users/${uid}/videos`);
     const getVideos = await videosCollectionRef
       .orderBy("timeSent", "desc")
-      .limit(20)
       .get();
 
     if (getVideos.empty) {
