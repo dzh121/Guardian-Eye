@@ -1,0 +1,59 @@
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.5.1",
+    "@nextui-org/react": "^2.3.6",
+    "bootstrap": "^5.3.3",
+    "firebase": "^10.6.0",
+    "firebase-admin": "^12.0.0",
+    "framer-motion": "^11.0.25",
+    "moment": "^2.30.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.3",
+    "react-scripts": "^5.0.1",
+    "web-vitals": "^2.1.4"
+  },
+  "proxy": "http://localhost:3000",
+  "scripts": {
+    "start": "set PORT=3001 && react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },  
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "overrides": {
+    "nth-check": "^2.1.1",
+    "postcss": "^8.4.31"
+  },
+  "main": "index.js",
+  "author": "Dzh121",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "@types/node": "^20.12.7",
+    "@types/react": "^18.2.75",
+    "@types/react-dom": "^18.2.24",
+    "typescript": "^4.9.5"
+  },
+  "description": ""
+}

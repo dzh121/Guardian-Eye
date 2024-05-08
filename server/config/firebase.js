@@ -4,9 +4,9 @@ const serviceAccount = require("./admin.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  storageBucket: "guardian-eye-de570.appspot.com",
+  storageBucket: process.env.storageBucket,
 });
-
+console.log("Firebase initialized");
 const db = admin.firestore();
 
 module.exports = { admin, db };
