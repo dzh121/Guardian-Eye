@@ -27,41 +27,6 @@ const SecurityFootageComponent: React.FC = () => {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [fetchingClips, setFetchingClips] = useState<boolean>(true);
 
-  // useEffect(() => {
-  //   const fetchUserToken = async () => {
-  //     const user = getAuth().currentUser;
-  //     return user ? await user.getIdToken() : null;
-  //   };
-
-  //   const fetchVideos = async () => {
-  //     try {
-  //       const idToken = await fetchUserToken();
-  //       const response = await fetch("http://localhost:3000/videos", {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${idToken}`,
-  //         },
-  //       });
-
-  //       if (!response.ok) {
-  //         throw new Error("Network response was not ok.");
-  //       }
-
-  //       const data = await response.json();
-
-  //       setVideos(data.videos);
-  //       console.log(data.videos);
-  //       setFetchingClips(false);
-  //     } catch (error) {
-  //       console.error("Error fetching videos: ", error);
-  //       setFetchingClips(false);
-  //     }
-  //   };
-
-  //   fetchVideos();
-  // }, []);
-
   const fetchImageForVideo = async (video: Video, idToken: string) => {
     console.log("Fetching image for video with eventID:", video.eventID);
     const response = await fetch(
@@ -172,32 +137,33 @@ const SecurityFootageComponent: React.FC = () => {
               className="flex flex-col justify-between"
               style={{ width: "95%" }}
             >
-              <CardHeader className="flex justify-center p-2">
+              <CardHeader
+                className="flex justify-center p-2"
+                style={{ height: "360px" }}
+              >
                 {video.eventID ? (
                   <Image
                     src={video.imageSrc}
                     className="object-cover rounded-lg opacity-100"
                     width="100%"
                     height="100%"
-                    alt="Live Feed"
+                    alt="Image Preview"
                   />
                 ) : (
-                  <Skeleton className="rounded-lg">
-                    <img
-                      src="live-feed.png"
-                      className="object-cover rounded-lg opacity-100"
-                      width="100%"
-                      height={140}
-                      alt="Live Feed"
-                    />
-                  </Skeleton>
+                  <Image
+                    src="no-image-available.png"
+                    className="object-cover rounded-lg opacity-100"
+                    width="100%"
+                    height="100%"
+                    alt="No Image Available"
+                  />
                 )}
               </CardHeader>
               <Divider />
-              <CardBody className="flex flex-col items-center justify-center text-center p-2">
-                <h1 className="text-sm font-bold">{video.deviceLocation}</h1>
-                <p className="text-xs">{convertTimestamp(video.timeSent)}</p>
-                <p className="text-xs">ID: {video.deviceID}</p>
+              <CardBody className="flex flex-col items-center justify-center text-center p-2 gap-2">
+                <h1 className="text-base font-bold">{video.deviceLocation}</h1>
+                <p className="text-base">{convertTimestamp(video.timeSent)}</p>
+                <p className="text-base">ID: {video.deviceID}</p>
               </CardBody>
               <Divider />
               <CardFooter className="flex items-center justify-center p-2">
@@ -205,7 +171,7 @@ const SecurityFootageComponent: React.FC = () => {
                   onClick={() => handleVideoSelect(video)}
                   color="primary"
                   variant="solid"
-                  size="sm"
+                  size="md"
                 >
                   View Details
                 </Button>
