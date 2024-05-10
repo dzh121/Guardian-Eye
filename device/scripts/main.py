@@ -8,7 +8,7 @@ from collections import deque
 import threading
 import subprocess
 import sendFile as sf
-import json
+import uuid
 from dotenv import load_dotenv
 import deviceStream
 import requests
@@ -20,6 +20,7 @@ ENCODINGS_FILE = "../data/encodings.dat"
 SHAPE_PREDICTOR_FILE = "../models/shape_predictor_68_face_landmarks.dat"
 FACE_RECOGNITION_MODEL_FILE = "../models/dlib_face_recognition_resnet_model_v1.dat"
 VIDEO_DIRECTORY = "../videos"
+IMAGE_DIRECTORY = "../images"
 
 load_dotenv()
 EMAIL = os.getenv("EMAIL")
@@ -102,31 +103,61 @@ def draw_results(frame, face_locations, face_names):
         )
 
 
-def save_buffer_to_file(buffer, filename):
+def save_buffer_to_file(buffer, filename, save_first_image, event_id, face_frame=0):
     if not buffer:
         print("No data in buffer to save")
         return
 
-    print(f"Number of frames in buffer: {len(buffer)}")  # Debugging line
-
-    # Assuming the frames are 640x480; adjust as needed
+    print(f"Number of frames in buffer: {len(buffer)}")
     frame_height, frame_width = buffer[0].shape[:2]
-    print(f"Frame dimensions: {frame_width}x{frame_height}")  # Debugging line
+    print(f"Frame dimensions: {frame_width}x{frame_height}")
 
-    # Create the output directory if it doesn't exist
     os.makedirs(VIDEO_DIRECTORY, exist_ok=True)
+    os.makedirs(IMAGE_DIRECTORY, exist_ok=True)
+    video_path = os.path.join(VIDEO_DIRECTORY, filename)
 
-    filepath = os.path.join(VIDEO_DIRECTORY, filename)
-
-    # Using 'XVID' codec
     fourcc = cv2.VideoWriter_fourcc(*"XVID")
-    out = cv2.VideoWriter(filepath, fourcc, 30.0, (frame_width, frame_height))
+    out = cv2.VideoWriter(video_path, fourcc, 30.0, (frame_width, frame_height))
 
-    for frame in buffer:
+    for i, frame in enumerate(buffer):
+        if i == face_frame and save_first_image:
+            image_path = os.path.join(IMAGE_DIRECTORY, f"{event_id}.jpg")
+            cv2.imwrite(image_path, frame)
+            sf.sendFile(image_path, DEVICE_ID, DEVICE_LOCATION, id_token, event_id)
+            print(f"Saved image to {image_path}")
+
         out.write(frame)
 
     out.release()
-    re_encode_video(f"{VIDEO_DIRECTORY}/{filename}")
+    re_encode_video(video_path)
+    return video_path
+
+
+# def save_buffer_to_file(buffer, filename):
+#     if not buffer:
+#         print("No data in buffer to save")
+#         return
+#
+#     print(f"Number of frames in buffer: {len(buffer)}")  # Debugging line
+#
+#     # Assuming the frames are 640x480; adjust as needed
+#     frame_height, frame_width = buffer[0].shape[:2]
+#     print(f"Frame dimensions: {frame_width}x{frame_height}")  # Debugging line
+#
+#     # Create the output directory if it doesn't exist
+#     os.makedirs(VIDEO_DIRECTORY, exist_ok=True)
+#
+#     filepath = os.path.join(VIDEO_DIRECTORY, filename)
+#
+#     # Using 'XVID' codec
+#     fourcc = cv2.VideoWriter_fourcc(*"XVID")
+#     out = cv2.VideoWriter(filepath, fourcc, 30.0, (frame_width, frame_height))
+#
+#     for frame in buffer:
+#         out.write(frame)
+#
+#     out.release()
+#     re_encode_video(f"{VIDEO_DIRECTORY}/{filename}")
 
 
 def re_encode_video(filepath, bitrate="1860k"):
@@ -158,6 +189,9 @@ class BufferManager:
         self.buffer = deque(maxlen=self.total_buffer_size)
         self.face_detected = False
         self.lock = threading.Lock()
+        self.event_id = None
+        self.MIN_DETECTION_DURATION = 10  # 10 seconds
+        self.lastDetectionTime = time.time() - self.MIN_DETECTION_DURATION
 
     def add_frame(self, frame):
         # print(f"Face Detected: {self.face_detected}")
@@ -175,7 +209,13 @@ class BufferManager:
             self.save_video()
 
     def process_detection(self, face_detected):
-        if face_detected and not self.face_detected:
+        if (
+            face_detected
+            and not self.face_detected
+            and abs(self.lastDetectionTime - time.time()) >= self.MIN_DETECTION_DURATION
+        ):
+            self.lastDetectionTime = time.time()
+            self.event_id = f"{uuid.uuid4().hex}_{int(time.time())}"
             self.face_detected = True
             # Adjust the buffer size to keep additional frames post-detection
             self.buffer = deque(
@@ -194,17 +234,20 @@ class BufferManager:
 
         print(f"Frames to save: {len(buffer_copy)}")
         if buffer_copy:
-            filename = f"output_{int(time.time())}.mp4"
-            save_buffer_to_file(buffer_copy, filename)
+            filename = f"{self.event_id}.mp4"
+            video_path = save_buffer_to_file(
+                buffer_copy,
+                filename,
+                True,
+                self.event_id,
+                int(self.fps * 15),
+            )
             print(f"Saved video to {filename}")
-            print("sending idToken: " + id_token)
             sf.sendFile(
-                f"{VIDEO_DIRECTORY}/{filename}",
-                DEVICE_ID,
-                DEVICE_LOCATION,
-                id_token,
+                video_path, DEVICE_ID, DEVICE_LOCATION, id_token, filename.split(".")[0]
             )
             print(f"Sent video to server")
+
             self.clear_buffer()
 
     def get_next_frame_for_processing(self):
@@ -215,6 +258,7 @@ class BufferManager:
 
     def clear_buffer(self):
         self.buffer.clear()
+        self.event_id = None
 
 
 def frame_capture_thread(video_url, buffer_manager):
