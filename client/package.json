@@ -5,11 +5,14 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.5.1",
     "@nextui-org/react": "^2.3.6",
+    "@nextui-org/theme": "^2.2.3",
     "bootstrap": "^5.3.3",
-    "firebase": "^10.6.0",
+    "face-api.js": "^0.22.2",
+    "firebase": "^10.12.0",
     "firebase-admin": "^12.0.0",
     "framer-motion": "^11.0.25",
     "moment": "^2.30.1",
+    "pickle": "^0.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3",
@@ -22,7 +25,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
-  },  
+  },
   "eslintConfig": {
     "extends": [
       "react-app",

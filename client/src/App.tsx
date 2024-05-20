@@ -15,7 +15,7 @@ import HomeComponent from "./components/features/HomeComponent";
 import LiveVideoComponent from "./components/features/LiveVideoComponent";
 import SecurityFootageComponent from "./components/features/SecurityFootageComponent";
 import SettingsComponent from "./components/features/SettingsComponent";
-import FamiliarFacesComponent from "./components/features/FamiliarFacesComponent";
+import UserFaces from "./components/features/UserFaces";
 import LoginOrRegisterComponent from "./components/auth/LoginOrRegisterComponent";
 import { CircularProgress } from "@nextui-org/react";
 
@@ -83,10 +83,7 @@ const App: React.FC = () => {
                   element={<SecurityFootageComponent />}
                 />
                 <Route path="/settings" element={<SettingsComponent />} />
-                <Route
-                  path="/familiarFaces"
-                  element={<FamiliarFacesComponent />}
-                />
+                <Route path="/familiarFaces" element={<UserFaces />} />
                 <Route
                   path="/loginOrRegister"
                   element={<Navigate replace to="/home" />}

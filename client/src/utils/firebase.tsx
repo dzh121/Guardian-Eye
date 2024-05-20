@@ -1,6 +1,8 @@
+// src/utils/firebase.ts
 import { FirebaseApp, initializeApp } from "firebase/app";
 import { Auth, getAuth } from "firebase/auth";
 import { Firestore, getFirestore } from "firebase/firestore";
+import { getStorage, ref as storageRef, uploadBytes } from "firebase/storage";
 
 interface FirebaseConfig {
   apiKey: string | undefined;
@@ -27,5 +29,6 @@ const app: FirebaseApp = initializeApp(firebaseConfig);
 // Initialize Firebase Authentication and Firestore
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
+const storage = getStorage(app);
 
-export { app, auth, db };
+export { app, auth, db, storage, storageRef, uploadBytes };
