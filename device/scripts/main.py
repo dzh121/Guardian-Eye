@@ -16,13 +16,16 @@ import firebase_admin
 from firebase_admin import credentials, firestore, storage
 import json
 
+
 # Configuration and constants
 ENCODINGS_FILE = "../data/encodings.dat"
 SHAPE_PREDICTOR_FILE = "../models/shape_predictor_68_face_landmarks.dat"
 FACE_RECOGNITION_MODEL_FILE = "../models/dlib_face_recognition_resnet_model_v1.dat"
 VIDEO_DIRECTORY = "../videos"
 IMAGE_DIRECTORY = "../images"
+MIN_DETECTION_DURATION = 2 * 60  # 2 minutes
 
+# Load environment variables
 load_dotenv()
 EMAIL = os.getenv("EMAIL")
 PASSWORD = os.getenv("PASSWORD")
@@ -34,22 +37,76 @@ PORT = None
 RECOGNIZE_FACES = False
 recognition_started = False
 
+# Thread control variables
 capture_thread = None
 detection_thread = None
-
-condition = threading.Condition()
-
-
 stop_capture_thread = False
 stop_detection_thread = False
-
-MIN_DETECTION_DURATION = 2 * 60  # 2 minutes
 
 # Firebase Initialization
 if not firebase_admin._apps:
     cred = credentials.Certificate("../data/admin.json")
     firebase_admin.initialize_app(cred)
 db = firestore.client()
+
+# Condition variable for face recognition
+condition = threading.Condition()
+
+
+# Firestore listeners
+def on_snapshot(doc_snapshot, changes, read_time):
+    global RECOGNIZE_FACES
+    for change in changes:
+        if change.type.name == "MODIFIED":
+            doc = change.document
+            if "recognizeFaces" in doc.to_dict():
+                new_value = doc.get("recognizeFaces")
+                print(f"Recognize Faces changed to: {new_value}")
+                with condition:
+                    RECOGNIZE_FACES = new_value
+                    condition.notify()
+
+
+def get_initial_recognize_faces_value():
+    global RECOGNIZE_FACES
+
+    doc_ref = db.collection("users").document(user_id)
+    try:
+        doc = doc_ref.get()
+        if doc.exists:
+            RECOGNIZE_FACES = doc.get("recognizeFaces")
+            print(f"Initial Recognize Faces value: {RECOGNIZE_FACES}")
+        else:
+            print("Document does not exist.")
+    except Exception as e:
+        print(f"Error getting document: {e}")
+
+
+def setup_firestore_listener(user_id):
+    print(f"Listening for changes to user document: {user_id}")
+    doc_ref = db.collection("users").document(user_id)
+    doc_watch = doc_ref.on_snapshot(on_snapshot)
+
+
+def check_for_encodings_update(interval=1800):
+    """Check for updates to the encodings.dat file periodically. 30 minutes by default."""
+    while True:
+        download_encodings()
+        time.sleep(interval)
+
+
+# Helper functions
+def authenticate_user(email, password):
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
+
+    data = {"email": email, "password": password, "returnSecureToken": True}
+
+    response = requests.post(url, json=data)
+    if response.status_code == 200:
+        user_info = response.json()
+        return user_info["localId"], user_info["idToken"]
+    else:
+        return None, None
 
 
 def download_encodings():
@@ -74,11 +131,7 @@ def load_encodings(filename=ENCODINGS_FILE):
     return {}
 
 
-def check_for_encodings_update(interval=1800):
-    """Check for updates to the encodings.dat file periodically. 30 minutes by default."""
-    while True:
-        download_encodings()
-        time.sleep(interval)
+# Face recognition functions
 
 
 def process_frame(
@@ -255,6 +308,9 @@ class BufferManager:
         self.event_id = None
 
 
+# Thread functions
+
+
 def frame_capture_thread(video_url, buffer_manager):
     global stop_capture_thread
     while not stop_capture_thread:
@@ -316,6 +372,9 @@ def face_detection_thread(
                     detection_start_time = None
         frame_counter += 1
         time.sleep(0.01)
+
+
+# Main control functions
 
 
 def main():
@@ -447,53 +506,6 @@ def stop_threads():
         detection_thread = None
 
     print("Threads have been stopped.")
-
-
-def authenticate_user(email, password):
-    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
-
-    data = {"email": email, "password": password, "returnSecureToken": True}
-
-    response = requests.post(url, json=data)
-    if response.status_code == 200:
-        user_info = response.json()
-        return user_info["localId"], user_info["idToken"]
-    else:
-        return None, None
-
-
-def on_snapshot(doc_snapshot, changes, read_time):
-    global RECOGNIZE_FACES
-    for change in changes:
-        if change.type.name == "MODIFIED":
-            doc = change.document
-            if "recognizeFaces" in doc.to_dict():
-                new_value = doc.get("recognizeFaces")
-                print(f"Recognize Faces changed to: {new_value}")
-                with condition:
-                    RECOGNIZE_FACES = new_value
-                    condition.notify()
-
-
-def get_initial_recognize_faces_value():
-    global RECOGNIZE_FACES
-
-    doc_ref = db.collection("users").document(user_id)
-    try:
-        doc = doc_ref.get()
-        if doc.exists:
-            RECOGNIZE_FACES = doc.get("recognizeFaces")
-            print(f"Initial Recognize Faces value: {RECOGNIZE_FACES}")
-        else:
-            print("Document does not exist.")
-    except Exception as e:
-        print(f"Error getting document: {e}")
-
-
-def setup_firestore_listener(user_id):
-    print(f"Listening for changes to user document: {user_id}")
-    doc_ref = db.collection("users").document(user_id)
-    doc_watch = doc_ref.on_snapshot(on_snapshot)
 
 
 if __name__ == "__main__":
