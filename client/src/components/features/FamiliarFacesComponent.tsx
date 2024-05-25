@@ -368,7 +368,7 @@ const FamiliarFacesComponent: React.FC = () => {
           style={{ display: "none" }}
           id="file-upload"
         />
-        <label className="" htmlFor="file-upload">
+        <label className="m-2" htmlFor="file-upload">
           <Button as="span">Choose Image</Button>
         </label>
         {newFace.imageUrl && (
