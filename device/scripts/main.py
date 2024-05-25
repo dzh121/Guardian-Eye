@@ -13,7 +13,8 @@ from dotenv import load_dotenv
 import deviceStream
 import requests
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, storage
+import json
 
 # Configuration and constants
 ENCODINGS_FILE = "../data/encodings.dat"
@@ -28,6 +29,7 @@ PASSWORD = os.getenv("PASSWORD")
 DEVICE_LOCATION = os.getenv("LOCATION")
 DEVICE_ID = os.getenv("DEVICE_ID")
 API_KEY = os.getenv("API_KEY")
+STORAGE_BUCKET = os.getenv("STORAGE_BUCKET")
 PORT = None
 RECOGNIZE_FACES = False
 recognition_started = False
@@ -41,7 +43,7 @@ condition = threading.Condition()
 stop_capture_thread = False
 stop_detection_thread = False
 
-MIN_DETECTION_DURATION = 2
+MIN_DETECTION_DURATION = 2 * 60  # 2 minutes
 
 # Firebase Initialization
 if not firebase_admin._apps:
@@ -50,12 +52,33 @@ if not firebase_admin._apps:
 db = firestore.client()
 
 
+def download_encodings():
+    """Download the encodings.dat file from Firebase Storage."""
+    bucket = storage.bucket(STORAGE_BUCKET)
+    blob = bucket.blob(f"{user_id}/encodings.dat")
+    local_path = ENCODINGS_FILE
+
+    if blob.exists():
+        blob.download_to_filename(local_path)
+        print("Encodings file downloaded successfully.")
+    else:
+        print("Encodings file not found in Firebase Storage.")
+
+
 def load_encodings(filename=ENCODINGS_FILE):
-    """Load face encodings from a file."""
+    """Load face encodings from a JSON file."""
+    download_encodings()
     if os.path.exists(filename):
-        with open(filename, "rb") as file:
-            return pickle.load(file)
+        with open(filename, "r") as file:
+            return json.load(file)
     return {}
+
+
+def check_for_encodings_update(interval=1800):
+    """Check for updates to the encodings.dat file periodically. 30 minutes by default."""
+    while True:
+        download_encodings()
+        time.sleep(interval)
 
 
 def process_frame(
@@ -133,33 +156,6 @@ def save_buffer_to_file(buffer, filename, save_first_image, event_id, face_frame
     return video_path
 
 
-# def save_buffer_to_file(buffer, filename):
-#     if not buffer:
-#         print("No data in buffer to save")
-#         return
-#
-#     print(f"Number of frames in buffer: {len(buffer)}")  # Debugging line
-#
-#     # Assuming the frames are 640x480; adjust as needed
-#     frame_height, frame_width = buffer[0].shape[:2]
-#     print(f"Frame dimensions: {frame_width}x{frame_height}")  # Debugging line
-#
-#     # Create the output directory if it doesn't exist
-#     os.makedirs(VIDEO_DIRECTORY, exist_ok=True)
-#
-#     filepath = os.path.join(VIDEO_DIRECTORY, filename)
-#
-#     # Using 'XVID' codec
-#     fourcc = cv2.VideoWriter_fourcc(*"XVID")
-#     out = cv2.VideoWriter(filepath, fourcc, 30.0, (frame_width, frame_height))
-#
-#     for frame in buffer:
-#         out.write(frame)
-#
-#     out.release()
-#     re_encode_video(f"{VIDEO_DIRECTORY}/{filename}")
-
-
 def re_encode_video(filepath, bitrate="1860k"):
     # Create a temporary output file name
     tmp_filepath = filepath + ".tmp.mp4"
@@ -190,12 +186,10 @@ class BufferManager:
         self.face_detected = False
         self.lock = threading.Lock()
         self.event_id = None
-        self.MIN_DETECTION_DURATION = 10  # 10 seconds
+        self.MIN_DETECTION_DURATION = MIN_DETECTION_DURATION
         self.lastDetectionTime = time.time() - self.MIN_DETECTION_DURATION
 
     def add_frame(self, frame):
-        # print(f"Face Detected: {self.face_detected}")
-
         should_save = False
         with self.lock:
             self.buffer.append(frame)
@@ -325,7 +319,7 @@ def face_detection_thread(
 
 
 def main():
-    global recognition_started
+    global recognition_started, known_face_encodings
     known_face_encodings = load_encodings()
     face_detector = dlib.get_frontal_face_detector()
     shape_predictor = dlib.shape_predictor(SHAPE_PREDICTOR_FILE)
@@ -515,6 +509,10 @@ if __name__ == "__main__":
         device_stream = deviceStream.DeviceStream(user_id, id_token)
         PORT = device_stream.get_port()
         device_stream.run_server(in_background=True)
+
+        encodings_update_thread = threading.Thread(target=check_for_encodings_update)
+        encodings_update_thread.daemon = True
+        encodings_update_thread.start()
     except Exception as e:
         print(f"An error occurred: {e}")
     try:
