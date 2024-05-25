@@ -105,7 +105,6 @@ const FamiliarFacesComponent: React.FC = () => {
         .split(".")
         .pop()}`;
       const displayName = newFace.name;
-      // Check if the face already exists
       if (
         faces.some((face) => face.displayName === displayName) ||
         newFaces.some((face) => face.displayName === displayName)
@@ -125,6 +124,8 @@ const FamiliarFacesComponent: React.FC = () => {
         await uploadBytes(imageRef, newFace.image);
         const imageUrl = await getDownloadURL(imageRef);
 
+        URL.revokeObjectURL(newFace.imageUrl);
+
         setNewFaces([...newFaces, { name: imageName, imageUrl, displayName }]);
         setNewFace({ name: "", image: null, imageUrl: "" });
       } catch (error) {
@@ -140,6 +141,17 @@ const FamiliarFacesComponent: React.FC = () => {
       const file = e.target.files[0];
       if (file.type.startsWith("image/")) {
         const imageUrl = URL.createObjectURL(file);
+
+        // Revoke the previous object URL to avoid memory leaks
+        if (newFace.imageUrl) {
+          URL.revokeObjectURL(newFace.imageUrl);
+        }
+        const fileInput = document.getElementById(
+          "file-upload"
+        ) as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = "";
+        }
         setNewFace({ ...newFace, image: file, imageUrl });
       } else {
         setMessage({ message: "Please choose an image file.", type: "error" });
@@ -246,29 +258,37 @@ const FamiliarFacesComponent: React.FC = () => {
     if (!idToken || !user) {
       console.error("User not logged in.");
       setMessage({ message: "User not logged in.", type: "error" });
+      setIsDeleting(false);
       return;
     }
 
     try {
-      const response = await fetch("/api/remove-faces", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          faces: [{ name: face.name }],
-          user_uid: user.uid,
-        }),
-      });
+      // Check if the face is in newFaces
+      if (newFaces.some((newFace) => newFace.name === face.name)) {
+        await deleteObject(imageRef);
+        setNewFaces((newFaces) => newFaces.filter((f) => f.name !== face.name));
+        setMessage({ message: "Face removed successfully.", type: "success" });
+      } else {
+        const response = await fetch("/api/remove-faces", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            faces: [{ name: face.name }],
+            user_uid: user.uid,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to remove face from server");
+        if (!response.ok) {
+          throw new Error("Failed to remove face from server");
+        }
+
+        await deleteObject(imageRef);
+        setFaces((faces) => faces.filter((f) => f.name !== face.name));
+        setMessage({ message: "Face removed successfully.", type: "success" });
       }
-
-      await deleteObject(imageRef);
-      setFaces((faces) => faces.filter((f) => f.name !== face.name));
-      setMessage({ message: "Face removed successfully.", type: "success" });
     } catch (error) {
       console.error("Error removing face:", error);
       setMessage({ message: "Error removing face.", type: "error" });
@@ -354,7 +374,6 @@ const FamiliarFacesComponent: React.FC = () => {
       >
         <Input
           className="mb-2"
-          isClearable
           fullWidth
           label="Name"
           value={newFace.name}
