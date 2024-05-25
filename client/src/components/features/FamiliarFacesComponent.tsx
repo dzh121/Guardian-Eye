@@ -23,6 +23,7 @@ import { useWindowSize } from "../../utils/useWindowSize";
 type Face = {
   name: string;
   imageUrl: string;
+  displayName: string;
 };
 
 const FamiliarFacesComponent: React.FC = () => {
@@ -40,6 +41,7 @@ const FamiliarFacesComponent: React.FC = () => {
   const [newFaces, setNewFaces] = useState<Face[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(windowSize.isLarge ? 8 : 4);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<{
     message: string;
     type: "success" | "error";
@@ -80,27 +82,33 @@ const FamiliarFacesComponent: React.FC = () => {
   }, [user, newFaces]);
 
   const fetchFaces = async () => {
+    if (!user) {
+      return;
+    }
     const facesRef = storageRef(storage, `${user?.uid}/known_faces/`);
     const facesList = await listAll(facesRef);
     const facesUrls = await Promise.all(
       facesList.items.map(async (itemRef) => {
         const url = await getDownloadURL(itemRef);
-        return { name: itemRef.name, imageUrl: url };
+        const name = itemRef.name;
+        const displayName = name.substring(0, name.lastIndexOf("."));
+        return { name, imageUrl: url, displayName };
       })
     );
     setFaces(facesUrls);
   };
 
   const handleAddFace = async () => {
+    setMessage(null);
     if (newFace.name && newFace.image) {
       const imageName = `${newFace.name}.${newFace.image.name
         .split(".")
         .pop()}`;
-
+      const displayName = newFace.name;
       // Check if the face already exists
       if (
-        faces.some((face) => face.name === imageName) ||
-        newFaces.some((face) => face.name === imageName)
+        faces.some((face) => face.displayName === displayName) ||
+        newFaces.some((face) => face.displayName === displayName)
       ) {
         setMessage({
           message: "Face with this name already exists.",
@@ -117,8 +125,7 @@ const FamiliarFacesComponent: React.FC = () => {
         await uploadBytes(imageRef, newFace.image);
         const imageUrl = await getDownloadURL(imageRef);
 
-        const updatedNewFaces = [...newFaces, { name: imageName, imageUrl }];
-        setNewFaces(updatedNewFaces);
+        setNewFaces([...newFaces, { name: imageName, imageUrl, displayName }]);
         setNewFace({ name: "", image: null, imageUrl: "" });
       } catch (error) {
         console.error("Error uploading image: ", error);
@@ -128,6 +135,7 @@ const FamiliarFacesComponent: React.FC = () => {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessage(null);
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.type.startsWith("image/")) {
@@ -140,6 +148,7 @@ const FamiliarFacesComponent: React.FC = () => {
   };
 
   const generateDatFile = async () => {
+    setMessage(null);
     if (!user) {
       alert("You must be logged in to upload files.");
       return;
@@ -154,21 +163,32 @@ const FamiliarFacesComponent: React.FC = () => {
         });
         await uploadDatFileToFirebase(file, filename);
 
-        if (encodings.errors.includes(face.name)) {
-          throw new Error(`Face ${face.name} was not recognized.`);
+        if (encodings.errors.includes(face.displayName)) {
+          throw new Error(`Face ${face.displayName} was not recognized.`);
         } else if (encodings.added_faces.length === 0) {
-          throw new Error(`Face ${face.name} was not added.`);
+          throw new Error(`Face ${face.displayName} was not added.`);
         } else {
-          setFaces((faces) => [...faces, face]);
+          // Move the new face to the faces array only if it doesn't already exist
+          if (
+            !faces.some(
+              (existingFace) => existingFace.displayName === face.displayName
+            )
+          ) {
+            setFaces((faces) => [...faces, face]);
+          }
           setNewFaces((newFaces) =>
-            newFaces.filter((f) => f.name !== face.name)
+            newFaces.filter((f) => f.displayName !== face.displayName)
           );
           setMessage({ message: "Face added successfully!", type: "success" });
         }
       } catch (error) {
-        console.error("Error generating .dat file for face:", face.name, error);
+        console.error(
+          "Error generating .dat file for face:",
+          face.displayName,
+          error
+        );
         setMessage({
-          message: `Failed to generate .dat file for ${face.name}.`,
+          message: `Failed to generate .dat file for ${face.displayName}.`,
           type: "error",
         });
         const imageRef = storageRef(
@@ -178,7 +198,9 @@ const FamiliarFacesComponent: React.FC = () => {
         await deleteObject(imageRef).catch((err) =>
           console.error("Failed to delete image:", err)
         );
-        setNewFaces((newFaces) => newFaces.filter((f) => f.name !== face.name));
+        setNewFaces((newFaces) =>
+          newFaces.filter((f) => f.displayName !== face.displayName)
+        );
       }
     }
   };
@@ -196,7 +218,7 @@ const FamiliarFacesComponent: React.FC = () => {
       console.error("User not logged in.");
       return { encodings: {}, added_faces: [], errors: [] };
     }
-    const response = await fetch("/api/generate-encodings", {
+    const response = await fetch("/api/add-faces", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${idToken}`,
@@ -212,15 +234,47 @@ const FamiliarFacesComponent: React.FC = () => {
     return response.json();
   };
   const handleRemoveFace = async (face: Face) => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    setMessage(null);
     const imageRef = storageRef(
       storage,
       `${user?.uid}/known_faces/${face.name}`
     );
-    await deleteObject(imageRef).catch((err) =>
-      console.error("Failed to delete image:", err)
-    );
-    setFaces((faces) => faces.filter((f) => f.name !== face.name));
-    setMessage({ message: "Face removed successfully.", type: "success" });
+
+    const idToken = user ? await user.getIdToken() : null;
+    if (!idToken || !user) {
+      console.error("User not logged in.");
+      setMessage({ message: "User not logged in.", type: "error" });
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/remove-faces", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          faces: [{ name: face.name }],
+          user_uid: user.uid,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to remove face from server");
+      }
+
+      await deleteObject(imageRef);
+      setFaces((faces) => faces.filter((f) => f.name !== face.name));
+      setMessage({ message: "Face removed successfully.", type: "success" });
+    } catch (error) {
+      console.error("Error removing face:", error);
+      setMessage({ message: "Error removing face.", type: "error" });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const uploadDatFileToFirebase = async (file: Blob, filename: string) => {
@@ -229,10 +283,14 @@ const FamiliarFacesComponent: React.FC = () => {
     // alert("Encodings file uploaded to Firebase Storage successfully.");
   };
   const totalPages = Math.ceil((faces.length + newFaces.length) / itemsPerPage);
-  const currentItems = [...faces, ...newFaces].slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+
+  const currentItems = [
+    ...faces,
+    ...newFaces.filter(
+      (newFace) =>
+        !faces.some((face) => face.displayName === newFace.displayName)
+    ),
+  ].slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const Message: React.FC<{ message: string; type: "success" | "error" }> = ({
     message,
@@ -264,25 +322,27 @@ const FamiliarFacesComponent: React.FC = () => {
               <Image
                 className="object-cover"
                 src={face.imageUrl}
-                alt={face.name}
+                alt={face.displayName}
                 width="100%"
                 height="140px"
                 style={{ borderRadius: "8px" }}
               />
             </CardHeader>
             <CardBody>
-              <Input
-                readOnly
-                value={face.name}
-                style={{ marginBottom: "1rem" }}
-              />
-              <Button color="danger" onClick={() => handleRemoveFace(face)}>
+              <Input readOnly value={face.displayName} />
+              <Button
+                style={{ marginTop: "1rem" }}
+                color="danger"
+                onClick={() => handleRemoveFace(face)}
+                disabled={isDeleting}
+              >
                 Remove
               </Button>
             </CardBody>
           </Card>
         ))}
       </div>
+
       <Spacer y={2} />
       <div
         style={{
@@ -293,6 +353,7 @@ const FamiliarFacesComponent: React.FC = () => {
         }}
       >
         <Input
+          className="mb-2"
           isClearable
           fullWidth
           label="Name"
@@ -307,7 +368,7 @@ const FamiliarFacesComponent: React.FC = () => {
           style={{ display: "none" }}
           id="file-upload"
         />
-        <label className="m-2" htmlFor="file-upload">
+        <label className="" htmlFor="file-upload">
           <Button as="span">Choose Image</Button>
         </label>
         {newFace.imageUrl && (
@@ -328,12 +389,10 @@ const FamiliarFacesComponent: React.FC = () => {
             />
           </div>
         )}
-        <Button className="mt-2" onClick={handleAddFace}>
-          Add Face
-        </Button>
+        <Button onClick={handleAddFace}>Add Face</Button>
         <Spacer y={0.5} />
         <Button className="mt-2" onClick={generateDatFile}>
-          Generate .dat File
+          Update Familiars Faces
         </Button>
       </div>
       <Spacer y={1} />

@@ -83,14 +83,20 @@ app.use("/video", verifyToken, serveVideos);
 
 app.use("/image", verifyToken, serveImages);
 
-app.post("/api/generate-encodings", verifyToken, (req, res) => {
+app.post("/api/add-faces", verifyToken, (req, res) => {
   const faces = req.body.faces;
   const token = req.headers.authorization.split(" ")[1];
   const user_uid = req.user.uid;
 
   const pythonProcess = spawn("python", [
     "./utils/encode.py",
-    JSON.stringify({ faces, token, storageBucket: process.env.storageBucket,user_uid }),
+    JSON.stringify({
+      faces,
+      token,
+      storageBucket: process.env.storageBucket,
+      user_uid,
+      action: "add",
+    }),
   ]);
 
   let data = "";
@@ -110,6 +116,49 @@ app.post("/api/generate-encodings", verifyToken, (req, res) => {
     if (code !== 0) {
       console.error(`Python process exited with code ${code}`);
       return res.status(500).send(`Error generating encodings: ${error}`);
+    }
+    try {
+      const result = JSON.parse(data);
+      res.json(result);
+    } catch (parseError) {
+      console.error(`Error parsing JSON output: ${parseError}`);
+      res.status(500).send(`Error parsing JSON output: ${parseError}`);
+    }
+  });
+});
+app.post("/api/remove-faces", verifyToken, (req, res) => {
+  const faces = req.body.faces;
+  const token = req.headers.authorization.split(" ")[1];
+  const user_uid = req.user.uid;
+
+  const pythonProcess = spawn("python", [
+    "./utils/encode.py",
+    JSON.stringify({
+      faces,
+      token,
+      storageBucket: process.env.storageBucket,
+      user_uid,
+      action: "remove",
+    }), // Specify action as "remove"
+  ]);
+
+  let data = "";
+  let error = "";
+
+  pythonProcess.stdout.on("data", (chunk) => {
+    data += chunk;
+    console.log(`stdout: ${chunk}`);
+  });
+
+  pythonProcess.stderr.on("data", (chunk) => {
+    error += chunk;
+    console.error(`stderr: ${chunk}`);
+  });
+
+  pythonProcess.on("close", (code) => {
+    if (code !== 0) {
+      console.error(`Python process exited with code ${code}`);
+      return res.status(500).send(`Error removing faces: ${error}`);
     }
     try {
       const result = JSON.parse(data);

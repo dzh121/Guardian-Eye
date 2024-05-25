@@ -8,6 +8,7 @@ from PIL import Image
 import pickle
 from firebase_admin import credentials, storage
 import firebase_admin
+import os
 
 # Initialize Firebase Admin SDK
 try:
@@ -75,16 +76,17 @@ def add_face(known_faces, token, user_uid):
 
         if len(face_encodings) > 0:
             encoding = face_encodings[0].tolist()
-            if name in encodings or any(
+            base_name = os.path.splitext(name)[0]  # Extract name without extension
+            if base_name in encodings or any(
                 np.array_equal(encoding, existing_encoding)
                 for existing_encoding in encodings.values()
             ):
-                print(f"Face {name} already exists. Skipping.", file=sys.stderr)
+                print(f"Face {base_name} already exists. Skipping.", file=sys.stderr)
                 sys.stderr.flush()
                 continue
-            encodings[name] = encoding
-            added_faces.append(name)
-            print(f"Encoding for {name} added successfully.", file=sys.stderr)
+            encodings[base_name] = encoding
+            added_faces.append(base_name)
+            print(f"Encoding for {base_name} added successfully.", file=sys.stderr)
             sys.stderr.flush()
         else:
             print(f"No faces found in {image_url}. Skipping.", file=sys.stderr)
@@ -93,9 +95,21 @@ def add_face(known_faces, token, user_uid):
     save_encodings(user_uid, encodings)
     return encodings, added_faces, errors
 
+def remove_face(face_name, user_uid):
+    """Remove a face from the known faces."""
+    encodings = load_encodings(user_uid)
+    base_name = os.path.splitext(face_name)[0]  # Extract name without extension
+    if base_name in encodings:
+        del encodings[base_name]
+        print(f"Encoding for {base_name} removed successfully.", file=sys.stderr)
+    else:
+        print(f"Face {base_name} not found. Skipping.", file=sys.stderr)
+    save_encodings(user_uid, encodings)
+
 if __name__ == "__main__":
     try:
         args = json.loads(sys.argv[1])
+        action = args.get('action')
         faces = args['faces']
         token = args['token']
         storageBucket = args['storageBucket']
@@ -103,13 +117,23 @@ if __name__ == "__main__":
         firebase_admin.initialize_app(cred, {
           'storageBucket': storageBucket
         })
-        known_faces = {face['name']: face['imageUrl'] for face in faces}
-        encodings, added_faces, errors = add_face(known_faces, token, user_uid)
-        result = {
-            "encodings": encodings,
-            "added_faces": added_faces,
-            "errors": errors
-        }
+        if action == 'add':
+            known_faces = {face['name']: face['imageUrl'] for face in faces}
+            encodings, added_faces, errors = add_face(known_faces, token, user_uid)
+            result = {
+                "encodings": encodings,
+                "added_faces": added_faces,
+                "errors": errors
+            }
+        elif action == 'remove':
+            removed_faces = []
+            for face in faces:
+                remove_face(face['name'], user_uid)
+                removed_faces.append(face['name'])
+            result = {
+                "removed_faces": removed_faces
+            }
+            
         print(json.dumps(result))
         sys.stdout.flush()
     except Exception as e:
