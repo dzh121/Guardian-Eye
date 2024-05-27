@@ -143,7 +143,7 @@ const SecurityFootageComponent: React.FC = () => {
   return (
     <div>
       <h2 className="text-center text-2xl font-bold mb-4">Security Footage</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
         {currentItems.map((video, index) => (
           <Card
             key={index}

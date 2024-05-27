@@ -347,7 +347,7 @@ const FamiliarFacesComponent: React.FC = () => {
       <h2 className="text-center text-2xl font-bold my-4">Familiar Faces</h2>
       {message && <Message message={message.message} type={message.type} />}
       <Spacer y={1} />
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
         {currentItems.map((face, index) => (
           <Card key={index} style={{ maxWidth: "400px", marginBottom: "1rem" }}>
             <CardHeader>
