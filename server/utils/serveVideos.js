@@ -1,22 +1,40 @@
-const express = require("express");
-const path = require("path");
-const fs = require("fs");
+const { admin, db } = require("../config/firebase");
 
-module.exports = async (req, res, next) => {
-  console.log("Serving videos...");
+module.exports = async (req, res) => {
   const uid = req.user.uid;
-  const videoDirectory = path.join(
-    __dirname,
-    "../uploads",
-    "users",
-    uid,
-    "videos"
-  );
+  const eventID = req.query.eventID;
 
-  if (!fs.existsSync(videoDirectory)) {
-    return res
-      .status(404)
-      .send("No videos found for this user" + videoDirectory);
+  if (!eventID) {
+    return res.status(400).send("Event ID is required.");
   }
-  express.static(videoDirectory)(req, res, next);
+
+  try {
+    const videosRef = db.collection("users").doc(uid).collection("videos");
+    const snapshot = await videosRef.where("eventID", "==", eventID).get();
+    if (snapshot.empty) {
+      return res.status(404).send("No video found for the provided event ID.");
+    }
+
+    const doc = snapshot.docs[0];
+    const data = doc.data();
+    const fileName = data.fileName;
+
+    const bucket = admin.storage().bucket();
+    const file = bucket.file(`${uid}/clips/videos/${fileName}`);
+
+    const [exists] = await file.exists();
+    if (!exists) {
+      return res.status(404).send("Video file not found");
+    }
+
+    const stream = file.createReadStream();
+    stream.on("error", (error) => {
+      console.error("Stream error:", error);
+      res.status(500).send("Error reading video stream");
+    });
+
+    stream.pipe(res);
+  } catch (error) {
+    res.status(500).send("Server error: " + error.message);
+  }
 };

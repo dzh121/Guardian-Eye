@@ -1,9 +1,6 @@
-const express = require("express");
-const path = require("path");
-const fs = require("fs");
-const { db } = require("../config/firebase");
+const { admin, db } = require("../config/firebase");
 
-module.exports = async (req, res, next) => {
+module.exports = async (req, res) => {
   const uid = req.user.uid;
   const eventID = req.query.eventID;
 
@@ -18,23 +15,25 @@ module.exports = async (req, res, next) => {
       return res.status(404).send("No image found for the provided event ID.");
     }
 
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      const imagePath = path.join(
-        __dirname,
-        "../uploads",
-        "users",
-        uid,
-        "images",
-        data.fileName
-      );
+    const doc = snapshot.docs[0];
+    const data = doc.data();
+    const fileName = data.fileName;
 
-      if (fs.existsSync(imagePath)) {
-        res.sendFile(imagePath);
-      } else {
-        res.status(404).send("Image file not found on server.");
-      }
+    const bucket = admin.storage().bucket();
+    const file = bucket.file(`${uid}/clips/images/${fileName}`);
+
+    const [exists] = await file.exists();
+    if (!exists) {
+      return res.status(404).send("Image file not found");
+    }
+
+    const stream = file.createReadStream();
+    stream.on("error", (error) => {
+      console.error("Stream error:", error);
+      res.status(500).send("Error reading image stream");
     });
+
+    stream.pipe(res);
   } catch (error) {
     res.status(500).send("Server error: " + error.message);
   }

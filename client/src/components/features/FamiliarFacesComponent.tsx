@@ -87,6 +87,7 @@ const FamiliarFacesComponent: React.FC = () => {
     if (!user) {
       return;
     }
+    // console.log(user.getIdToken());
     const facesRef = storageRef(storage, `${user?.uid}/known_faces/`);
     const facesList = await listAll(facesRef);
     const facesUrls = await Promise.all(
