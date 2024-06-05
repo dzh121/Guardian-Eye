@@ -23,7 +23,8 @@ SHAPE_PREDICTOR_FILE = "../models/shape_predictor_68_face_landmarks.dat"
 FACE_RECOGNITION_MODEL_FILE = "../models/dlib_face_recognition_resnet_model_v1.dat"
 VIDEO_DIRECTORY = "../videos"
 IMAGE_DIRECTORY = "../images"
-MIN_DETECTION_DURATION = 2 * 60  # 2 minutes
+MIN_WAIT_DURATION = 2 * 60  # 2 minutes
+MIN_TIME_DETECT_DURATION = 2  # 2 seconds for detection to be considered valid
 
 # Load environment variables
 load_dotenv()
@@ -239,7 +240,7 @@ class BufferManager:
         self.face_detected = False
         self.lock = threading.Lock()
         self.event_id = None
-        self.MIN_DETECTION_DURATION = MIN_DETECTION_DURATION
+        self.MIN_DETECTION_DURATION = MIN_WAIT_DURATION
         self.lastDetectionTime = time.time() - self.MIN_DETECTION_DURATION
 
     def add_frame(self, frame):
@@ -365,7 +366,7 @@ def face_detection_thread(
                 if face_detected:
                     if detection_start_time is None:
                         detection_start_time = time.time()
-                    elif time.time() - detection_start_time >= MIN_DETECTION_DURATION:
+                    elif time.time() - detection_start_time >= MIN_TIME_DETECT_DURATION:
                         buffer_manager.process_detection(True)
                         detection_start_time = None
                 else:
