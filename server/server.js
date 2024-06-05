@@ -8,10 +8,10 @@ require("dotenv").config({ path: path.join(__dirname, ".env") });
 const { admin } = require("./config/firebase");
 const rateLimit = require("express-rate-limit");
 const handleFaceOperation = require("./utils/faceHandler");
+const deleteClip = require("./utils/deleteClip");
 
 const app = express();
 const server = http.createServer(app);
-const db = admin.firestore();
 
 // Environment-specific settings
 const PORT = process.env.PORT || 3000;
@@ -29,11 +29,19 @@ if (process.env.NODE_ENV === "development") {
 }
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000,
   keyGenerator: (req) => {
     return req.ip;
   },
-  max: 100,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: {
+        message: "Too many requests, please try again later.",
+      },
+    });
+  },
+  delayMs: 0,
 });
 
 // Middleware setup
@@ -60,7 +68,6 @@ const uploadRoute = require("./routes/uploadRoute");
 const videosRoute = require("./routes/videosRoute");
 const serveVideos = require("./utils/serveVideos");
 const serveImages = require("./utils/serveImages");
-const { storage } = require("firebase-admin");
 
 // Routes
 app.get("/protected", verifyToken, (req, res) => {
@@ -82,8 +89,13 @@ app.use("/videos", verifyToken, videosRoute);
 // Video and Images serving middleware
 app.use("/video", verifyToken, serveVideos);
 
+// Image serving middleware
 app.use("/image", verifyToken, serveImages);
 
+// Delete video route
+app.delete("/clips/:eventID", verifyToken, deleteClip);
+
+// Face operations
 app.post("/api/add-faces", verifyToken, (req, res) => {
   const faces = req.body.faces;
   const token = req.headers.authorization.split(" ")[1];

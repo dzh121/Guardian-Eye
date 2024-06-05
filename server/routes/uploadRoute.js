@@ -1,4 +1,4 @@
-const { admin, db } = require("../config/firebase");
+const { admin, db, storage } = require("../config/firebase");
 
 module.exports = async (req, res) => {
   const {
@@ -16,10 +16,9 @@ module.exports = async (req, res) => {
   const uid = req.user.uid;
   const isVideo = req.file.mimetype.startsWith("video/");
   const isImage = req.file.mimetype.startsWith("image/");
-  //console log req.file:
-  console.log("isVideo: " + isVideo + "\n", "isImage: " + isImage);
-  // console.log("File: " + req.file.eventID);
   console.log(
+    "isVideo: " + isVideo + "\n",
+    "isImage: " + isImage + "\n",
     "deviceID: " + deviceID + "\n",
     "deviceLocation: " + deviceLocation + "\n",
     "timeSent: " + timeSent + "\n",
@@ -27,35 +26,53 @@ module.exports = async (req, res) => {
     "fileName: " + fileName + "\n"
   );
 
+  const uploadFileToFirebase = async (file, uid, folder, filename) => {
+    const bucket = admin.storage().bucket();
+    const fileRef = bucket.file(`${uid}/clips/${folder}/${filename}`);
+    const buffer = file.buffer;
+    if (!buffer) {
+      throw new Error("File buffer is undefined");
+    }
+    await fileRef.save(buffer, {
+      contentType: file.mimetype,
+    });
+  };
+
   try {
+    let folder;
+    if (isImage) {
+      folder = "images";
+    } else if (isVideo) {
+      folder = "videos";
+    } else {
+      return res.status(400).send("Unsupported file type");
+    }
+
+    if (req.file) {
+      await uploadFileToFirebase(req.file, uid, folder, fileName);
+    }
+
+    const data = {
+      deviceID,
+      fileName,
+      deviceLocation,
+      timeSent: new Date(timeSent),
+      eventID: eventID,
+    };
+
     let docRef;
     if (isImage) {
       const userImagesRef = db
         .collection("users")
         .doc(uid)
         .collection("images");
-      docRef = await userImagesRef.add({
-        deviceID,
-        fileName,
-        deviceLocation,
-        timeSent: new Date(timeSent),
-        eventID: eventID,
-      });
+      docRef = await userImagesRef.add(data);
     } else if (isVideo) {
       const userVideosRef = db
         .collection("users")
         .doc(uid)
         .collection("videos");
-      docRef = await userVideosRef.add({
-        deviceID,
-        fileName,
-        deviceLocation,
-        timeSent: new Date(timeSent),
-        eventID: eventID,
-      });
-    } else {
-      // If not image or video, you might want to handle other types or errors
-      return res.status(400).send("Unsupported file type");
+      docRef = await userVideosRef.add(data);
     }
 
     res.status(200).send(`File metadata saved with ID: ${docRef.id}`);

@@ -42,6 +42,8 @@ const FamiliarFacesComponent: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(windowSize.isLarge ? 8 : 4);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const [message, setMessage] = useState<{
     message: string;
     type: "success" | "error";
@@ -85,6 +87,7 @@ const FamiliarFacesComponent: React.FC = () => {
     if (!user) {
       return;
     }
+    // console.log(user.getIdToken());
     const facesRef = storageRef(storage, `${user?.uid}/known_faces/`);
     const facesList = await listAll(facesRef);
     const facesUrls = await Promise.all(
@@ -100,6 +103,14 @@ const FamiliarFacesComponent: React.FC = () => {
 
   const handleAddFace = async () => {
     setMessage(null);
+    if (newFace.name === "") {
+      setMessage({ message: "Please enter a name.", type: "error" });
+      return;
+    }
+    if (newFace.image === null) {
+      setMessage({ message: "Please choose an image.", type: "error" });
+      return;
+    }
     if (newFace.name && newFace.image) {
       const imageName = `${newFace.name}.${newFace.image.name
         .split(".")
@@ -160,10 +171,12 @@ const FamiliarFacesComponent: React.FC = () => {
   };
 
   const generateDatFile = async () => {
+    if (isUpdating) return;
     setMessage(null);
+    setIsUpdating(true);
     if (!user) {
-      alert("You must be logged in to upload files.");
-      return;
+      setIsUpdating(false);
+      throw new Error("User not logged in.");
     }
 
     for (const face of newFaces) {
@@ -180,7 +193,6 @@ const FamiliarFacesComponent: React.FC = () => {
         } else if (encodings.added_faces.length === 0) {
           throw new Error(`Face ${face.displayName} was not added.`);
         } else {
-          // Move the new face to the faces array only if it doesn't already exist
           if (
             !faces.some(
               (existingFace) => existingFace.displayName === face.displayName
@@ -215,6 +227,7 @@ const FamiliarFacesComponent: React.FC = () => {
         );
       }
     }
+    setIsUpdating(false);
   };
 
   const fetchEncodingsFromServer = async (
@@ -335,7 +348,7 @@ const FamiliarFacesComponent: React.FC = () => {
       <h2 className="text-center text-2xl font-bold my-4">Familiar Faces</h2>
       {message && <Message message={message.message} type={message.type} />}
       <Spacer y={1} />
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
         {currentItems.map((face, index) => (
           <Card key={index} style={{ maxWidth: "400px", marginBottom: "1rem" }}>
             <CardHeader>
@@ -377,10 +390,12 @@ const FamiliarFacesComponent: React.FC = () => {
           fullWidth
           label="Name"
           value={newFace.name}
+          disabled={isUpdating}
           onChange={(e) => setNewFace({ ...newFace, name: e.target.value })}
         />
         <input
           className="mt-2"
+          disabled={isUpdating}
           type="file"
           onChange={handleFileChange}
           accept="image/*"
@@ -408,9 +423,15 @@ const FamiliarFacesComponent: React.FC = () => {
             />
           </div>
         )}
-        <Button onClick={handleAddFace}>Add Face</Button>
+        <Button disabled={isUpdating} onClick={handleAddFace}>
+          Add Face
+        </Button>
         <Spacer y={0.5} />
-        <Button className="mt-2" onClick={generateDatFile}>
+        <Button
+          disabled={isUpdating}
+          className="mt-2"
+          onClick={generateDatFile}
+        >
           Update Familiars Faces
         </Button>
       </div>

@@ -14,7 +14,7 @@ type VideoComponentProps = {
   videoFilename: {
     deviceLocation: string;
     timeSent: { _seconds: number };
-    fileName: string; // Assuming this is the structure based on usage
+    eventID: string;
   };
   onGoBack: () => void;
 };
@@ -48,12 +48,11 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
       }
     };
 
-    const fetchVideoStream = async (idToken: string, filename: string) => {
-      console.log("Fetching video stream for:", filename);
-      const response = await fetch(`/video/${filename}`, {
+    const fetchVideoStream = async (idToken: string, eventID: string) => {
+      const response = await fetch(`/video?eventID=${eventID}`, {
         method: "GET",
         headers: {
-          "Content-Type": "application/ json",
+          "Content-Type": "application/json",
           Authorization: `Bearer ${idToken}`,
         },
       });
@@ -74,7 +73,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           location: videoFilename.deviceLocation,
           timestamp: videoFilename.timeSent,
         });
-        await fetchVideoStream(idToken, videoFilename.fileName);
+        await fetchVideoStream(idToken, videoFilename.eventID);
       }
     };
 
