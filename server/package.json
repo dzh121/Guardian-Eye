@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@firebase/storage": "^0.12.5",
+    "@firebase/storage": "^0.13.12",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.18.3",
